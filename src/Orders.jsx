@@ -274,7 +274,7 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef })
                 onClick={() => toggleDelivered(o.id)}
                 style={{ fontSize: 10.5, padding: "4px 9px", borderRadius: 999, border: "none", cursor: "pointer", flexShrink: 0, background: o.delivered ? `${T.positive}22` : T.card, color: o.delivered ? T.positive : T.inkFaint }}
               >
-                {o.delivered ? "Taken" : "Pending"}
+                {o.delivered ? "Delivered" : "Process"}
               </button>
               <button onClick={() => setEditingOrder(o)} style={iconBtnStyle(T)}><Pencil size={14} /></button>
               <button onClick={() => deleteOrder(o.id)} style={{ ...iconBtnStyle(T), color: T.negative }}><Trash2 size={14} /></button>
