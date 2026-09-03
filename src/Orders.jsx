@@ -1,8 +1,10 @@
 import React, { useState, useRef, useMemo } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Trash2, Pencil, X, Upload, Download, Sheet, Loader2, Search } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Upload, Download, Sheet, Loader2, Search, ScanLine, ListChecks } from "lucide-react";
 import { uid } from "./App";
 import { warrantyInfo } from "./Dashboard";
+import ScannerModal from "./Scanner";
+import PricelistPicker, { extractDurationDays, guessAppName } from "./PricelistPicker";
 
 function formatIDR(n) {
   const num = Number(n) || 0;
@@ -51,6 +53,8 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef })
   const [query, setQuery] = useState("");
   const [editingOrder, setEditingOrder] = useState(null); // order object being added/edited, or null
   const [showImport, setShowImport] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [showPricelistPicker, setShowPricelistPicker] = useState(false);
   const [sheetUrl, setSheetUrl] = useState("");
   const [pasteText, setPasteText] = useState("");
   const [importError, setImportError] = useState("");
@@ -62,6 +66,29 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef })
       .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
       .filter((o) => !query.trim() || (o.customer + " " + o.account).toLowerCase().includes(query.toLowerCase()));
   }, [orders, query]);
+
+  const handlePricelistPick = (item) => {
+    const guessedApp = guessAppName(item.name);
+    let apps = settings.apps;
+    let app = apps.find((a) => guessedApp.toLowerCase().includes(a.label.toLowerCase()) || a.label.toLowerCase().includes(guessedApp.toLowerCase()));
+    if (!app) {
+      app = { id: uid(), label: guessedApp, color: "#93AFC9" };
+      apps = [...apps, app];
+      persist({ ...data, settings: { ...settings, apps } });
+    }
+    const days = extractDurationDays(item.name) || extractDurationDays(item.unit);
+    const duration = days ? settings.durations.find((d) => d.days === days) : null;
+
+    setEditingOrder({
+      ...emptyOrder(),
+      appId: app.id,
+      durationId: duration ? duration.id : "",
+      sellPrice: Number(item.price) || 0,
+      notes: item.description || "",
+    });
+    setShowPricelistPicker(false);
+    flashToast("Pricelist item loaded — review and save");
+  };
 
   const saveOrder = (order) => {
     const exists = orders.some((o) => o.id === order.id);
@@ -209,9 +236,17 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef })
         <button onClick={exportExcel} style={iconOnlyBtn(T)} title="Export"><Download size={16} /></button>
       </div>
 
-      <button onClick={() => setEditingOrder(emptyOrder())} style={{ ...primaryBtnStyle(T), width: "100%", marginBottom: 14 }}>
-        <Plus size={14} /> Add order
-      </button>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        <button onClick={() => setEditingOrder(emptyOrder())} style={{ ...primaryBtnStyle(T), flex: 1 }}>
+          <Plus size={14} /> Add
+        </button>
+        <button onClick={() => setShowPricelistPicker(true)} style={{ ...primaryBtnStyle(T), flex: 1, background: T.card, color: T.accent }}>
+          <ListChecks size={14} /> From pricelist
+        </button>
+        <button onClick={() => setShowScanner(true)} style={{ ...primaryBtnStyle(T), flex: 1, background: T.card, color: T.accent }}>
+          <ScanLine size={14} /> Scan
+        </button>
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {filtered.length === 0 && <div style={{ textAlign: "center", color: T.inkFaint, fontSize: 13.5, padding: "24px 0" }}>No orders yet.</div>}
@@ -250,6 +285,26 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef })
 
       {editingOrder && (
         <OrderForm T={T} order={editingOrder} settings={settings} onSave={saveOrder} onClose={() => setEditingOrder(null)} onSettingsChange={(s) => persist({ ...data, settings: s })} editingRef={editingRef} />
+      )}
+
+      {showPricelistPicker && (
+        <PricelistPicker T={T} settings={settings} onClose={() => setShowPricelistPicker(false)} onPick={handlePricelistPick} />
+      )}
+
+      {showScanner && (
+        <ScannerModal
+          T={T}
+          settings={settings}
+          onClose={() => setShowScanner(false)}
+          onApply={(matched) => {
+            const base = emptyOrder();
+            const clean = {};
+            Object.keys(matched).forEach((k) => { if (!k.endsWith("_label")) clean[k] = matched[k]; });
+            setEditingOrder({ ...base, ...clean });
+            setShowScanner(false);
+            flashToast("Scanned data loaded — review and save");
+          }}
+        />
       )}
 
       {showImport && (
