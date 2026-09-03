@@ -12,7 +12,7 @@ function formatIDR(n) {
 function emptyOrder() {
   return {
     id: uid(), date: new Date().toISOString().slice(0, 10), customer: "", platformId: "", contact: "",
-    appId: "", planId: "", durationId: "", account: "", password: "", supplierId: "", supplierContact: "",
+    appId: "", planId: "", durationId: "", account: "", password: "", supplierId: "", supplierContactId: "", supplierContact: "",
     sellPrice: 0, costPrice: 0, notes: "", delivered: false,
   };
 }
@@ -119,8 +119,15 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef })
       apps = appRes.list;
       const planRes = findOrCreateOption(plans, row["plan"]);
       plans = planRes.list;
-      const supplierRes = findOrCreateOption(suppliers, row["first hand"] || row["firsthand"] || row["supplier"], { contact: row["contact fh"] || "" });
-      suppliers = supplierRes.list;
+      const supplierLabel = row["first hand"] || row["firsthand"] || row["supplier"] || "";
+      let supplier = suppliers.find((s) => s.label.toLowerCase() === supplierLabel.toLowerCase());
+      const fhContact = row["contact fh"] || "";
+      if (supplierLabel && !supplier) {
+        supplier = { id: uid(), label: supplierLabel, contacts: fhContact ? [{ id: uid(), name: "Admin 1", contact: fhContact }] : [] };
+        suppliers = [...suppliers, supplier];
+      }
+      const supplierId = supplier ? supplier.id : "";
+      const matchedContact = supplier && fhContact ? supplier.contacts.find((c) => c.contact === fhContact) : null;
       const durationLabel = row["durasi"] || row["duration"] || "";
       let duration = settings.durations.find((d) => d.label.toLowerCase() === durationLabel.toLowerCase());
       const durationId = duration ? duration.id : "";
@@ -135,8 +142,9 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef })
         durationId,
         account: row["data akun"] || row["account"] || "",
         password: row["password"] || "",
-        supplierId: supplierRes.id,
-        supplierContact: row["contact fh"] || "",
+        supplierId,
+        supplierContactId: matchedContact ? matchedContact.id : "",
+        supplierContact: fhContact,
         sellPrice: parseFloat(row["harga jual"] || row["sell price"] || 0) || 0,
         costPrice: parseFloat(row["harga beli"] || row["cost price"] || 0) || 0,
         notes: row["catatan"] || row["notes"] || "",
@@ -282,8 +290,17 @@ function OrderForm({ T, order, settings, onSave, onClose, onSettingsChange, edit
 
   const onSupplierChange = (supplierId) => {
     const supplier = settings.suppliers.find((s) => s.id === supplierId);
-    set({ supplierId, supplierContact: supplier ? supplier.contact : form.supplierContact });
+    const firstContact = supplier?.contacts?.[0];
+    set({ supplierId, supplierContactId: firstContact ? firstContact.id : "", supplierContact: firstContact ? firstContact.contact : "" });
   };
+
+  const onSupplierContactChange = (contactId) => {
+    const supplier = settings.suppliers.find((s) => s.id === form.supplierId);
+    const contact = supplier?.contacts?.find((c) => c.id === contactId);
+    set({ supplierContactId: contactId, supplierContact: contact ? contact.contact : form.supplierContact });
+  };
+
+  const selectedSupplier = settings.suppliers.find((s) => s.id === form.supplierId);
 
   const profit = (Number(form.sellPrice) || 0) - (Number(form.costPrice) || 0);
 
@@ -335,6 +352,14 @@ function OrderForm({ T, order, settings, onSave, onClose, onSettingsChange, edit
             {settings.suppliers.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
         </Field>
+        {selectedSupplier && selectedSupplier.contacts && selectedSupplier.contacts.length > 0 && (
+          <Field T={T} label="Admin / contact person">
+            <select value={form.supplierContactId || ""} onChange={(e) => onSupplierContactChange(e.target.value)} style={inputStyle(T)}>
+              <option value="">— pilih —</option>
+              {selectedSupplier.contacts.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.contact}</option>)}
+            </select>
+          </Field>
+        )}
         <Field T={T} label="Contact FH">
           <input value={form.supplierContact} onChange={(e) => set({ supplierContact: e.target.value })} style={inputStyle(T)} />
         </Field>

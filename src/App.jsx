@@ -37,10 +37,25 @@ export const DEFAULT_SETTINGS = {
     { id: uid(), label: "3 Months", days: 90 },
     { id: uid(), label: "Lifetime", days: null },
   ],
-  suppliers: [{ id: uid(), label: "Premstore", contact: "+62 877-6777-7777" }],
+  suppliers: [
+    { id: uid(), label: "Premstore", contacts: [{ id: uid(), name: "Admin 1", contact: "+62 877-6777-7777" }] },
+  ],
 };
 
 const DEFAULT_DATA = { settings: DEFAULT_SETTINGS, orders: [] };
+
+// migrates suppliers from the old single-`contact` shape to the new `contacts` array shape
+function migrateSuppliers(suppliers) {
+  return (suppliers || []).map((s) => {
+    if (Array.isArray(s.contacts)) return s;
+    const legacyContact = s.contact;
+    return {
+      id: s.id,
+      label: s.label,
+      contacts: legacyContact ? [{ id: uid(), name: "Admin 1", contact: legacyContact }] : [],
+    };
+  });
+}
 
 const THEMES = {
   light: {
@@ -109,7 +124,9 @@ export default function App() {
         setData(DEFAULT_DATA);
       } else if (!editingRef.current) {
         const d = snap.data();
-        setData({ settings: { ...DEFAULT_SETTINGS, ...(d.settings || {}) }, orders: d.orders || [] });
+        const mergedSettings = { ...DEFAULT_SETTINGS, ...(d.settings || {}) };
+        mergedSettings.suppliers = migrateSuppliers(mergedSettings.suppliers);
+        setData({ settings: mergedSettings, orders: d.orders || [] });
       }
       setDataLoaded(true);
     }, () => { setData(DEFAULT_DATA); setDataLoaded(true); });

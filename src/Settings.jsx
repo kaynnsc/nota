@@ -78,6 +78,85 @@ function OptionSection({ T, title, list, onChange, hasColor, hasDays, hasContact
   );
 }
 
+function SupplierSection({ T, list, onChange, editingRef }) {
+  const [open, setOpen] = useState(false);
+
+  const updateSupplier = (id, patch) => onChange(list.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  const removeSupplier = (id) => onChange(list.filter((s) => s.id !== id));
+  const addSupplier = () => onChange([...list, { id: uid(), label: "New supplier", contacts: [{ id: uid(), name: "Admin 1", contact: "" }] }]);
+
+  const addContact = (supplierId) => {
+    updateSupplier(supplierId, { contacts: [...(list.find((s) => s.id === supplierId)?.contacts || []), { id: uid(), name: "New admin", contact: "" }] });
+  };
+  const updateContact = (supplierId, contactId, patch) => {
+    const supplier = list.find((s) => s.id === supplierId);
+    if (!supplier) return;
+    updateSupplier(supplierId, { contacts: supplier.contacts.map((c) => (c.id === contactId ? { ...c, ...patch } : c)) });
+  };
+  const removeContact = (supplierId, contactId) => {
+    const supplier = list.find((s) => s.id === supplierId);
+    if (!supplier) return;
+    updateSupplier(supplierId, { contacts: supplier.contacts.filter((c) => c.id !== contactId) });
+  };
+
+  return (
+    <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 12, marginBottom: 10, overflow: "hidden" }}>
+      <div onClick={() => setOpen(!open)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", cursor: "pointer" }}>
+        <span style={{ fontSize: 14, fontWeight: 500 }}>Suppliers (First Hand) <span style={{ color: T.inkFaint, fontWeight: 400, fontSize: 12 }}>({list.length})</span></span>
+        {open ? <ChevronDown size={16} color={T.inkFaint} /> : <ChevronRight size={16} color={T.inkFaint} />}
+      </div>
+      {open && (
+        <div style={{ padding: "0 14px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
+          {list.map((supplier) => (
+            <div key={supplier.id} style={{ border: `1px solid ${T.cardBorder}`, borderRadius: 10, padding: 10 }}>
+              <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8 }}>
+                <input
+                  defaultValue={supplier.label}
+                  onFocus={() => (editingRef.current = true)}
+                  onBlur={(e) => { editingRef.current = false; updateSupplier(supplier.id, { label: e.target.value }); }}
+                  onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
+                  style={{ ...inputStyle(T), flex: 1, fontWeight: 500 }}
+                  placeholder="Supplier name"
+                />
+                <button onClick={() => removeSupplier(supplier.id)} style={{ ...iconBtnStyle(T), color: T.negative, flexShrink: 0 }}><Trash2 size={13} /></button>
+              </div>
+
+              <div style={{ fontSize: 11, color: T.inkFaint, marginBottom: 6, paddingLeft: 2 }}>Admins / contacts for this supplier</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                {(supplier.contacts || []).map((c) => (
+                  <div key={c.id} style={{ display: "flex", gap: 6, alignItems: "center", paddingLeft: 8 }}>
+                    <input
+                      defaultValue={c.name}
+                      onFocus={() => (editingRef.current = true)}
+                      onBlur={(e) => { editingRef.current = false; updateContact(supplier.id, c.id, { name: e.target.value }); }}
+                      onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
+                      style={{ ...inputStyle(T), width: 100, flexShrink: 0 }}
+                      placeholder="Admin name"
+                    />
+                    <input
+                      defaultValue={c.contact}
+                      onFocus={() => (editingRef.current = true)}
+                      onBlur={(e) => { editingRef.current = false; updateContact(supplier.id, c.id, { contact: e.target.value }); }}
+                      onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
+                      style={{ ...inputStyle(T), flex: 1, minWidth: 0 }}
+                      placeholder="+62..."
+                    />
+                    <button onClick={() => removeContact(supplier.id, c.id)} style={{ ...iconBtnStyle(T), color: T.negative, flexShrink: 0 }}><Trash2 size={12} /></button>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => addContact(supplier.id)} style={{ ...ghostBtnStyle(T), marginTop: 8, marginLeft: 8, padding: "6px 10px", fontSize: 11.5 }}>
+                <Plus size={11} /> Add admin
+              </button>
+            </div>
+          ))}
+          <button onClick={addSupplier} style={ghostBtnStyle(T)}><Plus size={12} /> Add supplier</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage({ T, data, persist, authPassword, flashToast, editingRef }) {
   const { settings } = data;
   const [newPw, setNewPw] = useState("");
@@ -106,7 +185,7 @@ export default function SettingsPage({ T, data, persist, authPassword, flashToas
       <OptionSection T={T} title="Apps (Aplikasi)" list={settings.apps} onChange={(list) => updateSettings({ apps: list })} hasColor editingRef={editingRef} />
       <OptionSection T={T} title="Plans" list={settings.plans} onChange={(list) => updateSettings({ plans: list })} editingRef={editingRef} />
       <OptionSection T={T} title="Durations (days until warranty expires)" list={settings.durations} onChange={(list) => updateSettings({ durations: list })} hasDays editingRef={editingRef} />
-      <OptionSection T={T} title="Suppliers (First Hand)" list={settings.suppliers} onChange={(list) => updateSettings({ suppliers: list })} hasContact editingRef={editingRef} />
+      <SupplierSection T={T} list={settings.suppliers} onChange={(list) => updateSettings({ suppliers: list })} editingRef={editingRef} />
 
       <div style={{ marginTop: 24, borderTop: `1px solid ${T.cardBorder}`, paddingTop: 18 }}>
         <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600, margin: "0 0 8px" }}>Admin password</h2>
