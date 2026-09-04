@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Trash2, Pencil, X, Upload, Download, Sheet, Loader2, Search, ScanLine, ListChecks, SlidersHorizontal } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Upload, Download, Sheet, Loader2, Search, ScanLine, ListChecks, SlidersHorizontal, Edit2 } from "lucide-react";
 import { uid } from "./App";
 import { warrantyInfo } from "./Dashboard";
 import ScannerModal from "./Scanner";
@@ -53,10 +53,11 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
   const [query, setQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [appFilter, setAppFilter] = useState("");
-  const [warrantyFilter, setWarrantyFilter] = useState("all"); // all | active | expiring | expired | lifetime
-  const [deliveredFilter, setDeliveredFilter] = useState("all"); // all | taken | pending
-  const [dateFilter, setDateFilter] = useState("all"); // all | today | month
-  const [editingOrder, setEditingOrder] = useState(null); // order object being added/edited, or null
+  const [warrantyFilter, setWarrantyFilter] = useState("all"); 
+  const [deliveredFilter, setDeliveredFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all"); 
+  const [viewingOrder, setViewingOrder] = useState(null); 
+  const [editingOrder, setEditingOrder] = useState(null); 
   const [showImport, setShowImport] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showPricelistPicker, setShowPricelistPicker] = useState(false);
@@ -66,7 +67,6 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
   const [importBusy, setImportBusy] = useState(false);
   const fileInputRef = useRef(null);
 
-  // apply a filter preset coming from Dashboard shortcuts (e.g. "Active Warranty", a stat card, a reminder)
   useEffect(() => {
     if (!initialFilter) return;
     if (initialFilter.type === "search") setQuery(initialFilter.query || "");
@@ -74,7 +74,6 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
     if (initialFilter.type === "today") setDateFilter("today");
     if (initialFilter.type === "month") setDateFilter("month");
     clearInitialFilter && clearInitialFilter();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialFilter]);
 
   const todayISO = new Date().toISOString().slice(0, 10);
@@ -337,7 +336,7 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
           return (
             <div
               key={o.id}
-              onClick={() => setEditingOrder(o)}
+              onClick={() => setViewingOrder(o)}
               style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 12, padding: 12, display: "flex", gap: 10, alignItems: "center", cursor: "pointer" }}
             >
               <div style={{ width: 34, height: 34, borderRadius: 8, background: app?.color || T.inkFaint, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
@@ -366,6 +365,16 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
           );
         })}
       </div>
+
+      {viewingOrder && (
+        <OrderViewModal 
+          T={T} 
+          order={viewingOrder} 
+          settings={settings} 
+          onClose={() => setViewingOrder(null)} 
+          onEdit={() => { setViewingOrder(null); setEditingOrder(viewingOrder); }}
+        />
+      )}
 
       {editingOrder && (
         <OrderForm T={T} order={editingOrder} settings={settings} onSave={saveOrder} onClose={() => setEditingOrder(null)} onSettingsChange={(s) => persist({ ...data, settings: s })} editingRef={editingRef} />
@@ -422,6 +431,56 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
   );
 }
 
+function OrderViewModal({ T, order, settings, onClose, onEdit }) {
+  const app = settings.apps.find((a) => a.id === order.appId)?.label || "—";
+  const plan = settings.plans.find((p) => p.id === order.planId)?.label || "—";
+  const platform = settings.platforms.find((p) => p.id === order.platformId)?.label || "—";
+  const duration = settings.durations.find((d) => d.id === order.durationId)?.label || "—";
+  const supplier = settings.suppliers.find((s) => s.id === order.supplierId)?.label || "—";
+  
+  const profit = (Number(order.sellPrice) || 0) - (Number(order.costPrice) || 0);
+
+  return (
+    <Modal T={T} title="View Order" onClose={onClose}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <ViewField T={T} label="Customer">{order.customer || "—"}</ViewField>
+        <ViewField T={T} label="Tanggal Order">{order.date}</ViewField>
+        <ViewField T={T} label="Platform & Kontak">{platform} {order.contact ? `— ${order.contact}` : ""}</ViewField>
+        <ViewField T={T} label="App & Plan">{app} — {plan} ({duration})</ViewField>
+        <ViewField T={T} label="Data Akun">{order.account || "—"}</ViewField>
+        <ViewField T={T} label="Password">{order.password || "—"}</ViewField>
+        <ViewField T={T} label="Supplier (First Hand)">{supplier} {order.supplierContact ? `— ${order.supplierContact}` : ""}</ViewField>
+        
+        <div style={{ display: "flex", gap: 8 }}>
+          <ViewField T={T} label="Harga Jual" style={{ flex: 1 }}>Rp {(Number(order.sellPrice) || 0).toLocaleString("id-ID")}</ViewField>
+          <ViewField T={T} label="Harga Beli" style={{ flex: 1 }}>Rp {(Number(order.costPrice) || 0).toLocaleString("id-ID")}</ViewField>
+        </div>
+        
+        <ViewField T={T} label="Keuntungan">
+          <span style={{ color: profit >= 0 ? T.positive : T.negative, fontWeight: 700 }}>
+            Rp {profit.toLocaleString("id-ID")}
+          </span>
+        </ViewField>
+        
+        <ViewField T={T} label="Catatan">{order.notes || "—"}</ViewField>
+
+        <button onClick={onEdit} style={{ ...primaryBtnStyle(T), marginTop: 8 }}>
+          <Edit2 size={16} /> Edit order
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function ViewField({ T, label, children, style }) {
+  return (
+    <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 8, padding: "10px 12px", ...style }}>
+      <div style={{ fontSize: 11, color: T.inkFaint, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.3 }}>{label}</div>
+      <div style={{ fontSize: 13.5, color: T.ink, fontWeight: 500 }}>{children}</div>
+    </div>
+  );
+}
+
 function OrderForm({ T, order, settings, onSave, onClose, onSettingsChange, editingRef }) {
   const [form, setForm] = useState(order);
 
@@ -445,64 +504,80 @@ function OrderForm({ T, order, settings, onSave, onClose, onSettingsChange, edit
 
   return (
     <Modal T={T} title={order.customer || order.id ? "Edit order" : "New order"} onClose={onClose}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }} onFocus={() => (editingRef.current = true)} onBlur={() => (editingRef.current = false)}>
-        <Field T={T} label="Tanggal order">
-          <input type="date" value={form.date} onChange={(e) => set({ date: e.target.value })} style={inputStyle(T)} />
-        </Field>
-        <Field T={T} label="Nama customer">
-          <input value={form.customer} onChange={(e) => set({ customer: e.target.value })} style={inputStyle(T)} placeholder="Customer name" />
-        </Field>
-        <Field T={T} label="Kode (platform order masuk)">
-          <select value={form.platformId} onChange={(e) => set({ platformId: e.target.value })} style={inputStyle(T)}>
-            <option value="">— pilih —</option>
-            {settings.platforms.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-          </select>
-        </Field>
-        <Field T={T} label="Keterangan (kontak customer)">
-          <input value={form.contact} onChange={(e) => set({ contact: e.target.value })} style={inputStyle(T)} placeholder="+62..." />
-        </Field>
-        <Field T={T} label="Aplikasi">
-          <select value={form.appId} onChange={(e) => set({ appId: e.target.value })} style={inputStyle(T)}>
-            <option value="">— pilih —</option>
-            {settings.apps.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
-          </select>
-        </Field>
-        <Field T={T} label="Plan">
-          <select value={form.planId} onChange={(e) => set({ planId: e.target.value })} style={inputStyle(T)}>
-            <option value="">— pilih —</option>
-            {settings.plans.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-          </select>
-        </Field>
-        <Field T={T} label="Durasi">
-          <select value={form.durationId} onChange={(e) => set({ durationId: e.target.value })} style={inputStyle(T)}>
-            <option value="">— pilih —</option>
-            {settings.durations.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
-          </select>
-        </Field>
-        <Field T={T} label="Data akun">
-          <input value={form.account} onChange={(e) => set({ account: e.target.value })} style={inputStyle(T)} placeholder="email@..." />
-        </Field>
-        <Field T={T} label="Password">
-          <input value={form.password} onChange={(e) => set({ password: e.target.value })} style={inputStyle(T)} />
-        </Field>
-        <Field T={T} label="First hand (supplier)">
-          <select value={form.supplierId} onChange={(e) => onSupplierChange(e.target.value)} style={inputStyle(T)}>
-            <option value="">— pilih —</option>
-            {settings.suppliers.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-          </select>
-        </Field>
-        {selectedSupplier && selectedSupplier.contacts && selectedSupplier.contacts.length > 0 && (
-          <Field T={T} label="Admin / contact person">
-            <select value={form.supplierContactId || ""} onChange={(e) => onSupplierContactChange(e.target.value)} style={inputStyle(T)}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }} onFocus={() => (editingRef.current = true)} onBlur={() => (editingRef.current = false)}>
+        
+        <div style={{ display: "flex", gap: 10 }}>
+          <Field T={T} label="Tanggal order" style={{ flex: 1 }}>
+            <input type="date" value={form.date} onChange={(e) => set({ date: e.target.value })} style={inputStyle(T)} />
+          </Field>
+          <Field T={T} label="Nama customer" style={{ flex: 1 }}>
+            <input value={form.customer} onChange={(e) => set({ customer: e.target.value })} style={inputStyle(T)} placeholder="Customer name" />
+          </Field>
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <Field T={T} label="Kode (Platform)" style={{ flex: 1 }}>
+            <select value={form.platformId} onChange={(e) => set({ platformId: e.target.value })} style={inputStyle(T)}>
               <option value="">— pilih —</option>
-              {selectedSupplier.contacts.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.contact}</option>)}
+              {settings.platforms.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
             </select>
           </Field>
-        )}
-        <Field T={T} label="Contact FH">
-          <input value={form.supplierContact} onChange={(e) => set({ supplierContact: e.target.value })} style={inputStyle(T)} />
-        </Field>
-        <div style={{ display: "flex", gap: 8 }}>
+          <Field T={T} label="Kontak customer" style={{ flex: 1 }}>
+            <input value={form.contact} onChange={(e) => set({ contact: e.target.value })} style={inputStyle(T)} placeholder="+62..." />
+          </Field>
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <Field T={T} label="Aplikasi" style={{ flex: 1 }}>
+            <select value={form.appId} onChange={(e) => set({ appId: e.target.value })} style={inputStyle(T)}>
+              <option value="">— pilih —</option>
+              {settings.apps.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
+            </select>
+          </Field>
+          <Field T={T} label="Plan" style={{ flex: 1 }}>
+            <select value={form.planId} onChange={(e) => set({ planId: e.target.value })} style={inputStyle(T)}>
+              <option value="">— pilih —</option>
+              {settings.plans.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+            </select>
+          </Field>
+          <Field T={T} label="Durasi" style={{ flex: 1 }}>
+            <select value={form.durationId} onChange={(e) => set({ durationId: e.target.value })} style={inputStyle(T)}>
+              <option value="">— pilih —</option>
+              {settings.durations.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+            </select>
+          </Field>
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <Field T={T} label="Data akun" style={{ flex: 1 }}>
+            <input value={form.account} onChange={(e) => set({ account: e.target.value })} style={inputStyle(T)} placeholder="email@..." />
+          </Field>
+          <Field T={T} label="Password" style={{ flex: 1 }}>
+            <input value={form.password} onChange={(e) => set({ password: e.target.value })} style={inputStyle(T)} />
+          </Field>
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <Field T={T} label="First hand (Supplier)" style={{ flex: 1 }}>
+            <select value={form.supplierId} onChange={(e) => onSupplierChange(e.target.value)} style={inputStyle(T)}>
+              <option value="">— pilih —</option>
+              {settings.suppliers.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+            </select>
+          </Field>
+          {selectedSupplier && selectedSupplier.contacts && selectedSupplier.contacts.length > 0 && (
+            <Field T={T} label="Admin / CP" style={{ flex: 1 }}>
+              <select value={form.supplierContactId || ""} onChange={(e) => onSupplierContactChange(e.target.value)} style={inputStyle(T)}>
+                <option value="">— pilih —</option>
+                {selectedSupplier.contacts.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.contact}</option>)}
+              </select>
+            </Field>
+          )}
+          <Field T={T} label="Contact FH" style={{ flex: 1 }}>
+            <input value={form.supplierContact} onChange={(e) => set({ supplierContact: e.target.value })} style={inputStyle(T)} />
+          </Field>
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
           <Field T={T} label="Harga jual" style={{ flex: 1 }}>
             <input type="number" value={form.sellPrice} onChange={(e) => set({ sellPrice: parseFloat(e.target.value) || 0 })} style={inputStyle(T)} />
           </Field>
@@ -510,10 +585,12 @@ function OrderForm({ T, order, settings, onSave, onClose, onSettingsChange, edit
             <input type="number" value={form.costPrice} onChange={(e) => set({ costPrice: parseFloat(e.target.value) || 0 })} style={inputStyle(T)} />
           </Field>
         </div>
+
         <div style={{ background: T.accentSoft, borderRadius: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 12.5, color: T.inkMuted }}>Keuntungan (auto)</span>
           <span style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: profit >= 0 ? T.positive : T.negative }}>Rp {profit.toLocaleString("id-ID")}</span>
         </div>
+        
         <Field T={T} label="Catatan">
           <textarea value={form.notes} onChange={(e) => set({ notes: e.target.value })} rows={2} style={{ ...inputStyle(T), resize: "vertical" }} />
         </Field>
