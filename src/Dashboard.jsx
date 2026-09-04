@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { ShoppingCart, ShieldCheck, Wallet, TrendingUp, Search, ChevronRight, X, AlertTriangle } from "lucide-react";
+import { ShoppingCart, ShieldCheck, Wallet, TrendingUp, Search, ChevronRight, X, AlertTriangle, Edit2 } from "lucide-react";
 
 function formatIDR(n) {
   const num = Number(n) || 0;
@@ -28,7 +28,7 @@ export function warrantyInfo(order, settings) {
 export default function Dashboard({ T, data, onNavigate }) {
   const { orders, settings } = data;
   const [searchInput, setSearchInput] = useState("");
-  const [viewingOrder, setViewingOrder] = useState(null); // Controls the read-only modal
+  const [viewingOrder, setViewingOrder] = useState(null);
 
   const runSearch = () => {
     if (searchInput.trim()) onNavigate({ type: "search", query: searchInput.trim() });
@@ -137,7 +137,7 @@ export default function Dashboard({ T, data, onNavigate }) {
         </div>
       </div>
 
-      {/* 4 STAT BOXES (Unclickable, matching the provided screenshot) */}
+      {/* 4 STAT BOXES */}
       <div style={{ background: T.bgElevated, borderRadius: 16, padding: "18px 16px", marginBottom: 16, border: `1px solid ${T.cardBorder}` }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <StatCard T={T} icon={<ShoppingCart size={16} />} label="Total orders" value={stats.totalOrders} color={T.accent} />
@@ -191,15 +191,23 @@ export default function Dashboard({ T, data, onNavigate }) {
         All totals above are calculated automatically from your order list.
       </div>
 
-      {/* READ-ONLY VIEW MODAL */}
+      {/* READ-ONLY VIEW MODAL (Matching Orders style) */}
       {viewingOrder && (
-        <OrderViewModal T={T} order={viewingOrder} settings={settings} onClose={() => setViewingOrder(null)} />
+        <OrderViewModal 
+          T={T} 
+          order={viewingOrder} 
+          settings={settings} 
+          onClose={() => setViewingOrder(null)} 
+          onEdit={() => { 
+            setViewingOrder(null); 
+            onNavigate({ type: "search", query: viewingOrder.customer }); 
+          }} 
+        />
       )}
     </div>
   );
 }
 
-// Flat, unclickable stat layout matching the provided image
 function StatCard({ T, icon, label, value, color }) {
   return (
     <div style={{ textAlign: "left", fontFamily: "'Work Sans', sans-serif" }}>
@@ -212,42 +220,96 @@ function StatCard({ T, icon, label, value, color }) {
   );
 }
 
-// Simple read-only modal for viewing order details
-function OrderViewModal({ T, order, settings, onClose }) {
-  const app = settings.apps.find((a) => a.id === order.appId)?.label || "Unknown App";
+function OrderViewModal({ T, order, settings, onClose, onEdit }) {
+  const app = settings.apps.find((a) => a.id === order.appId)?.label || "—";
   const plan = settings.plans.find((p) => p.id === order.planId)?.label || "—";
   const platform = settings.platforms.find((p) => p.id === order.platformId)?.label || "—";
   const duration = settings.durations.find((d) => d.id === order.durationId)?.label || "—";
+  const supplier = settings.suppliers.find((s) => s.id === order.supplierId)?.label || "—";
+  const selectedSupplier = settings.suppliers.find((s) => s.id === order.supplierId);
+  const supplierContactName = selectedSupplier?.contacts?.find((c) => c.id === order.supplierContactId)?.name || "";
+  
+  const profit = (Number(order.sellPrice) || 0) - (Number(order.costPrice) || 0);
 
   return (
     <div style={{ position: "fixed", inset: 0, background: T.overlay, display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 60 }} onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: T.bg, borderRadius: "16px 16px 0 0", padding: 22, width: "100%", maxWidth: 480, maxHeight: "88vh", overflowY: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 18, margin: 0, fontWeight: 600 }}>Order Details</h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 18, margin: 0, fontWeight: 600 }}>View Order</h3>
           <button onClick={onClose} style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 5, borderRadius: 5, border: "none", background: "transparent", cursor: "pointer", color: T.inkMuted }}>
             <X size={16} />
           </button>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <ViewField T={T} label="Customer">{order.customer}</ViewField>
-          <ViewField T={T} label="Platform">{platform}</ViewField>
-          <ViewField T={T} label="App & Plan">{app} — {plan} ({duration})</ViewField>
-          <ViewField T={T} label="Account Data">{order.account}</ViewField>
-          <ViewField T={T} label="Password">{order.password}</ViewField>
-          <ViewField T={T} label="Contact">{order.contact || "—"}</ViewField>
-          <ViewField T={T} label="Notes">{order.notes || "—"}</ViewField>
+          
+          {/* ROW 1: Date & Customer */}
+          <div style={{ display: "flex", gap: 10 }}>
+            <ReadOnlyField T={T} label="Tanggal order" style={{ flex: 1 }}>{order.date || "—"}</ReadOnlyField>
+            <ReadOnlyField T={T} label="Nama customer" style={{ flex: 1 }}>{order.customer || "—"}</ReadOnlyField>
+          </div>
+
+          {/* ROW 2: Platform & Contact */}
+          <div style={{ display: "flex", gap: 10 }}>
+            <ReadOnlyField T={T} label="Kode (Platform)" style={{ flex: 1 }}>{platform}</ReadOnlyField>
+            <ReadOnlyField T={T} label="Kontak customer" style={{ flex: 1 }}>{order.contact || "—"}</ReadOnlyField>
+          </div>
+
+          {/* ROW 3: App, Plan, Duration */}
+          <div style={{ display: "flex", gap: 10 }}>
+            <ReadOnlyField T={T} label="Aplikasi" style={{ flex: 1 }}>{app}</ReadOnlyField>
+            <ReadOnlyField T={T} label="Plan" style={{ flex: 1 }}>{plan}</ReadOnlyField>
+            <ReadOnlyField T={T} label="Durasi" style={{ flex: 1 }}>{duration}</ReadOnlyField>
+          </div>
+
+          {/* ROW 4: Account & Password */}
+          <div style={{ display: "flex", gap: 10 }}>
+            <ReadOnlyField T={T} label="Data akun" style={{ flex: 1 }}>{order.account || "—"}</ReadOnlyField>
+            <ReadOnlyField T={T} label="Password" style={{ flex: 1 }}>{order.password || "—"}</ReadOnlyField>
+          </div>
+
+          {/* ROW 5: Supplier info */}
+          <div style={{ display: "flex", gap: 10 }}>
+            <ReadOnlyField T={T} label="First hand (Supplier)" style={{ flex: 1 }}>{supplier}</ReadOnlyField>
+            {selectedSupplier && selectedSupplier.contacts && selectedSupplier.contacts.length > 0 && (
+              <ReadOnlyField T={T} label="Admin / CP" style={{ flex: 1 }}>
+                {supplierContactName ? `${supplierContactName} — ${order.supplierContact || ""}` : (order.supplierContact || "—")}
+              </ReadOnlyField>
+            )}
+            <ReadOnlyField T={T} label="Contact FH" style={{ flex: 1 }}>{order.supplierContact || "—"}</ReadOnlyField>
+          </div>
+
+          {/* ROW 6: Prices */}
+          <div style={{ display: "flex", gap: 10 }}>
+            <ReadOnlyField T={T} label="Harga jual" style={{ flex: 1 }}>Rp {(Number(order.sellPrice) || 0).toLocaleString("id-ID")}</ReadOnlyField>
+            <ReadOnlyField T={T} label="Harga beli" style={{ flex: 1 }}>Rp {(Number(order.costPrice) || 0).toLocaleString("id-ID")}</ReadOnlyField>
+          </div>
+
+          {/* Profit Box */}
+          <div style={{ background: T.accentSoft, borderRadius: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 12.5, color: T.inkMuted }}>Keuntungan (auto)</span>
+            <span style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: profit >= 0 ? T.positive : T.negative }}>Rp {profit.toLocaleString("id-ID")}</span>
+          </div>
+
+          {/* Notes */}
+          <ReadOnlyField T={T} label="Catatan">{order.notes || "—"}</ReadOnlyField>
+
+          <button onClick={onEdit} style={{ background: T.accent, color: T.isDark ? "#06101D" : "#F4F9FF", border: "none", borderRadius: 8, padding: "10px 16px", fontSize: 13.5, cursor: "pointer", fontFamily: "'Work Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6 }}>
+            <Edit2 size={16} /> View in orders
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-function ViewField({ T, label, children }) {
+function ReadOnlyField({ T, label, children, style }) {
   return (
-    <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 8, padding: "10px 12px" }}>
-      <div style={{ fontSize: 11, color: T.inkFaint, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.3 }}>{label}</div>
-      <div style={{ fontSize: 13.5, color: T.ink, fontWeight: 500 }}>{children}</div>
+    <div style={style}>
+      <label style={{ fontSize: 11.5, color: T.inkFaint, display: "block", marginBottom: 4 }}>{label}</label>
+      <div style={{ border: `1px solid ${T.cardBorder}`, borderRadius: 6, padding: "9px 10px", background: T.bgElevated, color: T.ink, fontFamily: "'Work Sans', sans-serif", fontSize: 13.5, minHeight: 38, display: "flex", alignItems: "center" }}>
+        {children}
+      </div>
     </div>
   );
 }
