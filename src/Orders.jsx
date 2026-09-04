@@ -1,6 +1,6 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Trash2, Pencil, X, Upload, Download, Sheet, Loader2, Search, ScanLine, ListChecks } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Upload, Download, Sheet, Loader2, Search, ScanLine, ListChecks, SlidersHorizontal } from "lucide-react";
 import { uid } from "./App";
 import { warrantyInfo } from "./Dashboard";
 import ScannerModal from "./Scanner";
@@ -48,9 +48,14 @@ function findOrCreateOption(list, label, extra = {}) {
   return { list: [...list, created], id: created.id };
 }
 
-export default function OrdersPage({ T, data, persist, flashToast, editingRef }) {
+export default function OrdersPage({ T, data, persist, flashToast, editingRef, initialFilter, clearInitialFilter }) {
   const { orders, settings } = data;
   const [query, setQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [appFilter, setAppFilter] = useState("");
+  const [warrantyFilter, setWarrantyFilter] = useState("all"); // all | active | expiring | expired | lifetime
+  const [deliveredFilter, setDeliveredFilter] = useState("all"); // all | taken | pending
+  const [dateFilter, setDateFilter] = useState("all"); // all | today | month
   const [editingOrder, setEditingOrder] = useState(null); // order object being added/edited, or null
   const [showImport, setShowImport] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -61,11 +66,45 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef })
   const [importBusy, setImportBusy] = useState(false);
   const fileInputRef = useRef(null);
 
+  // apply a filter preset coming from Dashboard shortcuts (e.g. "Active Warranty", a stat card, a reminder)
+  useEffect(() => {
+    if (!initialFilter) return;
+    if (initialFilter.type === "search") setQuery(initialFilter.query || "");
+    if (initialFilter.type === "warranty") { setWarrantyFilter("active"); setShowFilters(true); }
+    if (initialFilter.type === "today") setDateFilter("today");
+    if (initialFilter.type === "month") setDateFilter("month");
+    clearInitialFilter && clearInitialFilter();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFilter]);
+
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+
   const filtered = useMemo(() => {
     return [...orders]
       .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
-      .filter((o) => !query.trim() || (o.customer + " " + o.account).toLowerCase().includes(query.toLowerCase()));
-  }, [orders, query]);
+      .filter((o) => !query.trim() || (o.customer + " " + o.account).toLowerCase().includes(query.toLowerCase()))
+      .filter((o) => !appFilter || o.appId === appFilter)
+      .filter((o) => deliveredFilter === "all" || (deliveredFilter === "taken" ? o.delivered : !o.delivered))
+      .filter((o) => {
+        if (dateFilter === "all") return true;
+        if (dateFilter === "today") return o.date === todayISO;
+        if (dateFilter === "month") {
+          const d = new Date(o.date);
+          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        }
+        return true;
+      })
+      .filter((o) => {
+        if (warrantyFilter === "all") return true;
+        const w = warrantyInfo(o, settings);
+        if (warrantyFilter === "active") return w.status === "active" || w.status === "expiring" || w.status === "lifetime";
+        return w.status === warrantyFilter;
+      });
+  }, [orders, query, appFilter, deliveredFilter, dateFilter, warrantyFilter, settings, todayISO]);
+
+  const hasActiveFilters = appFilter || warrantyFilter !== "all" || deliveredFilter !== "all" || dateFilter !== "all";
+  const clearAllFilters = () => { setAppFilter(""); setWarrantyFilter("all"); setDeliveredFilter("all"); setDateFilter("all"); };
 
   const handlePricelistPick = (item) => {
     const guessedApp = guessAppName(item.name);
@@ -232,9 +271,50 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef })
           <Search size={15} color={T.inkFaint} />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search orders" style={{ border: "none", outline: "none", background: "transparent", flex: 1, fontSize: 13.5, color: T.ink, fontFamily: "'Work Sans', sans-serif" }} />
         </div>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          style={{ ...iconOnlyBtn(T), position: "relative", color: hasActiveFilters ? T.accent : T.inkMuted, borderColor: hasActiveFilters ? T.accent : T.cardBorder }}
+          title="Filter"
+        >
+          <SlidersHorizontal size={16} />
+          {hasActiveFilters && <span style={{ position: "absolute", top: 4, right: 4, width: 7, height: 7, borderRadius: "50%", background: T.accent }} />}
+        </button>
         <button onClick={() => setShowImport(true)} style={iconOnlyBtn(T)} title="Import"><Upload size={16} /></button>
         <button onClick={exportExcel} style={iconOnlyBtn(T)} title="Export"><Download size={16} /></button>
       </div>
+
+      {showFilters && (
+        <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 12, padding: 12, marginBottom: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <select value={appFilter} onChange={(e) => setAppFilter(e.target.value)} style={filterSelectStyle(T)}>
+              <option value="">All apps</option>
+              {settings.apps.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
+            </select>
+            <select value={warrantyFilter} onChange={(e) => setWarrantyFilter(e.target.value)} style={filterSelectStyle(T)}>
+              <option value="all">All warranty</option>
+              <option value="active">Active</option>
+              <option value="expiring">Expiring soon</option>
+              <option value="expired">Expired</option>
+              <option value="lifetime">Lifetime</option>
+            </select>
+            <select value={deliveredFilter} onChange={(e) => setDeliveredFilter(e.target.value)} style={filterSelectStyle(T)}>
+              <option value="all">All status</option>
+              <option value="taken">Taken</option>
+              <option value="pending">Pending</option>
+            </select>
+            <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} style={filterSelectStyle(T)}>
+              <option value="all">All dates</option>
+              <option value="today">Today</option>
+              <option value="month">This month</option>
+            </select>
+          </div>
+          {hasActiveFilters && (
+            <button onClick={clearAllFilters} style={{ alignSelf: "flex-start", background: "none", border: "none", color: T.negative, fontSize: 12, cursor: "pointer", padding: 0 }}>
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
         <button onClick={() => setEditingOrder(emptyOrder())} style={{ ...primaryBtnStyle(T), flex: 1 }}>
@@ -255,7 +335,11 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef })
           const profit = (Number(o.sellPrice) || 0) - (Number(o.costPrice) || 0);
           const w = warrantyInfo(o, settings);
           return (
-            <div key={o.id} style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 12, padding: 12, display: "flex", gap: 10, alignItems: "center" }}>
+            <div
+              key={o.id}
+              onClick={() => setEditingOrder(o)}
+              style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 12, padding: 12, display: "flex", gap: 10, alignItems: "center", cursor: "pointer" }}
+            >
               <div style={{ width: 34, height: 34, borderRadius: 8, background: app?.color || T.inkFaint, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
                 {(app?.label || "?")[0].toUpperCase()}
               </div>
@@ -271,13 +355,13 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef })
                 </div>
               </div>
               <button
-                onClick={() => toggleDelivered(o.id)}
+                onClick={(e) => { e.stopPropagation(); toggleDelivered(o.id); }}
                 style={{ fontSize: 10.5, padding: "4px 9px", borderRadius: 999, border: "none", cursor: "pointer", flexShrink: 0, background: o.delivered ? `${T.positive}22` : T.card, color: o.delivered ? T.positive : T.inkFaint }}
               >
-                {o.delivered ? "Delivered" : "Process"}
+                {o.delivered ? "Taken" : "Pending"}
               </button>
-              <button onClick={() => setEditingOrder(o)} style={iconBtnStyle(T)}><Pencil size={14} /></button>
-              <button onClick={() => deleteOrder(o.id)} style={{ ...iconBtnStyle(T), color: T.negative }}><Trash2 size={14} /></button>
+              <button onClick={(e) => { e.stopPropagation(); setEditingOrder(o); }} style={iconBtnStyle(T)}><Pencil size={14} /></button>
+              <button onClick={(e) => { e.stopPropagation(); deleteOrder(o.id); }} style={{ ...iconBtnStyle(T), color: T.negative }}><Trash2 size={14} /></button>
             </div>
           );
         })}
@@ -471,6 +555,9 @@ function primaryBtnStyle(T) {
 }
 function iconBtnStyle(T) {
   return { display: "flex", alignItems: "center", justifyContent: "center", padding: 5, borderRadius: 5, border: "none", background: "transparent", cursor: "pointer", color: T.inkMuted, flexShrink: 0 };
+}
+function filterSelectStyle(T) {
+  return { border: `1px solid ${T.cardBorder}`, borderRadius: 999, padding: "6px 10px", background: T.card, color: T.ink, outline: "none", fontFamily: "'Work Sans', sans-serif", fontSize: 12, flex: "1 1 auto", minWidth: 100 };
 }
 function iconOnlyBtn(T) {
   return { display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 10, border: `1px solid ${T.cardBorder}`, background: T.bgElevated, cursor: "pointer", color: T.inkMuted, flexShrink: 0 };

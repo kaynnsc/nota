@@ -1,6 +1,6 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { ShoppingCart, ShieldCheck, Wallet, TrendingUp, AlertTriangle } from "lucide-react";
+import { ShoppingCart, ShieldCheck, Wallet, TrendingUp, AlertTriangle, Search, ChevronRight } from "lucide-react";
 
 function formatIDR(n) {
   const num = Number(n) || 0;
@@ -25,8 +25,13 @@ export function warrantyInfo(order, settings) {
   return { status: "active", daysLeft };
 }
 
-export default function Dashboard({ T, data }) {
+export default function Dashboard({ T, data, onNavigate }) {
   const { orders, settings } = data;
+  const [searchInput, setSearchInput] = useState("");
+
+  const runSearch = () => {
+    if (searchInput.trim()) onNavigate({ type: "search", query: searchInput.trim() });
+  };
 
   const stats = useMemo(() => {
     const today = todayISO();
@@ -85,11 +90,30 @@ export default function Dashboard({ T, data }) {
 
   return (
     <div style={{ padding: "0 20px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 999, padding: "10px 16px", marginBottom: 14 }}>
+        <Search size={16} color={T.inkFaint} />
+        <input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && runSearch()}
+          placeholder="Search orders, customers"
+          style={{ border: "none", outline: "none", background: "transparent", flex: 1, fontSize: 14, color: T.ink, fontFamily: "'Work Sans', sans-serif" }}
+        />
+      </div>
+
+      <button
+        onClick={() => onNavigate({ type: "warranty" })}
+        style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", background: "transparent", border: "none", cursor: "pointer", padding: "6px 2px 12px", fontFamily: "'Work Sans', sans-serif" }}
+      >
+        <span style={{ fontSize: 13.5, fontWeight: 500, color: T.ink }}>Active Warranty</span>
+        <ChevronRight size={16} color={T.inkFaint} />
+      </button>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-        <StatCard T={T} icon={<ShoppingCart size={18} />} label="Total orders" value={stats.totalOrders} color={T.accent} />
-        <StatCard T={T} icon={<ShieldCheck size={18} />} label="Active warranty" value={stats.activeWarranty} color={T.positive} />
-        <StatCard T={T} icon={<Wallet size={18} />} label="Today's profit" value={formatIDR(stats.todaysProfit)} color={T.accent} />
-        <StatCard T={T} icon={<TrendingUp size={18} />} label="Monthly profit" value={formatIDR(stats.monthlyProfit)} color={T.positive} />
+        <StatCard T={T} icon={<ShoppingCart size={18} />} label="Total orders" value={stats.totalOrders} color={T.accent} onClick={() => onNavigate(null)} />
+        <StatCard T={T} icon={<ShieldCheck size={18} />} label="Active warranty" value={stats.activeWarranty} color={T.positive} onClick={() => onNavigate({ type: "warranty" })} />
+        <StatCard T={T} icon={<Wallet size={18} />} label="Today's profit" value={formatIDR(stats.todaysProfit)} color={T.accent} onClick={() => onNavigate({ type: "today" })} />
+        <StatCard T={T} icon={<TrendingUp size={18} />} label="Monthly profit" value={formatIDR(stats.monthlyProfit)} color={T.positive} onClick={() => onNavigate({ type: "month" })} />
       </div>
 
       <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 14, padding: "16px 12px", marginBottom: 16 }}>
@@ -137,7 +161,11 @@ export default function Dashboard({ T, data }) {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {reminders.map(({ o, w }) => (
-              <div key={o.id} style={{ background: T.dangerSoft, border: `1px solid ${T.negative}33`, borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div
+                key={o.id}
+                onClick={() => onNavigate({ type: "search", query: o.customer })}
+                style={{ background: T.dangerSoft, border: `1px solid ${T.negative}33`, borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+              >
                 <div>
                   <div style={{ fontSize: 13.5, fontWeight: 500, color: T.ink }}>{o.customer}</div>
                   <div style={{ fontSize: 11.5, color: T.inkMuted }}>{settings.apps.find((a) => a.id === o.appId)?.label || "—"}</div>
@@ -158,14 +186,17 @@ export default function Dashboard({ T, data }) {
   );
 }
 
-function StatCard({ T, icon, label, value, color }) {
+function StatCard({ T, icon, label, value, color, onClick }) {
   return (
-    <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 14, padding: 14 }}>
+    <button
+      onClick={onClick}
+      style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 14, padding: 14, cursor: onClick ? "pointer" : "default", textAlign: "left", fontFamily: "'Work Sans', sans-serif" }}
+    >
       <div style={{ width: 32, height: 32, borderRadius: 8, background: T.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", color, marginBottom: 8 }}>
         {icon}
       </div>
       <div style={{ fontSize: 11.5, color: T.inkMuted }}>{label}</div>
       <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "'Fraunces', serif", color: T.ink, marginTop: 2 }}>{value}</div>
-    </div>
+    </button>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
-import { Moon, Sun, Lock, Loader2, LayoutDashboard, ReceiptText, Settings as SettingsIcon, Check } from "lucide-react";
+import { Moon, Sun, Lock, Loader2, LayoutDashboard, ReceiptText, Settings as SettingsIcon, Check, Menu, X, LogOut, NotebookText } from "lucide-react";
 import Dashboard from "./Dashboard";
 import OrdersPage from "./Orders";
 import SettingsPage from "./Settings";
@@ -94,6 +94,8 @@ export default function App() {
   const [data, setData] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [tab, setTab] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [ordersFilterPreset, setOrdersFilterPreset] = useState(null);
   const [toast, setToast] = useState("");
   const editingRef = useRef(false);
 
@@ -137,6 +139,11 @@ export default function App() {
     setData(next);
     try { await setDoc(DATA_DOC_REF, next); } catch (e) { flashToast("Couldn't save — check your connection"); }
   }, []);
+
+  const goToOrders = (filterPreset) => {
+    setOrdersFilterPreset(filterPreset || null);
+    setTab("orders");
+  };
 
   const handleLogin = () => {
     if (pwInput === authPassword) { setIsLoggedIn(true); setPwInput(""); setLoginError(""); }
@@ -197,24 +204,49 @@ export default function App() {
     <div style={{ minHeight: "100vh", width: "100%", background: T.bg, fontFamily: "'Work Sans', sans-serif", color: T.ink }}>
       <style>{FONT_LINK}</style>
 
-      <div style={{ maxWidth: 560, margin: "0 auto", paddingBottom: 90 }}>
+      <div style={{ maxWidth: 560, margin: "0 auto", paddingBottom: 30 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 20px 16px" }}>
-          <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 21, fontWeight: 600, margin: 0 }}>Nota</h1>
+          <button onClick={() => setSidebarOpen(true)} style={{ width: 36, height: 36, borderRadius: "50%", background: T.card, border: `1px solid ${T.cardBorder}`, display: "flex", alignItems: "center", justifyContent: "center", color: T.ink, cursor: "pointer" }}>
+            <Menu size={16} />
+          </button>
+          <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 21, fontWeight: 600, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+            <NotebookText size={18} color={T.accent} /> Nota
+          </h1>
           <button onClick={() => setDark(!dark)} style={{ width: 36, height: 36, borderRadius: "50%", background: T.card, border: `1px solid ${T.cardBorder}`, display: "flex", alignItems: "center", justifyContent: "center", color: T.ink, cursor: "pointer" }}>
             {dark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
         </div>
 
-        {tab === "dashboard" && <Dashboard T={T} data={data} />}
-        {tab === "orders" && <OrdersPage T={T} data={data} persist={persist} flashToast={flashToast} editingRef={editingRef} />}
+        {tab === "dashboard" && <Dashboard T={T} data={data} onNavigate={goToOrders} />}
+        {tab === "orders" && (
+          <OrdersPage
+            T={T}
+            data={data}
+            persist={persist}
+            flashToast={flashToast}
+            editingRef={editingRef}
+            initialFilter={ordersFilterPreset}
+            clearInitialFilter={() => setOrdersFilterPreset(null)}
+          />
+        )}
         {tab === "settings" && <SettingsPage T={T} data={data} persist={persist} authPassword={authPassword} flashToast={flashToast} editingRef={editingRef} />}
       </div>
 
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: T.navBg, borderTop: `1px solid ${T.navBorder}`, display: "flex", justifyContent: "space-around", padding: "12px 20px calc(12px + env(safe-area-inset-bottom))", zIndex: 20 }}>
-        <button onClick={() => setTab("dashboard")} style={navBtn(T, tab === "dashboard")}><LayoutDashboard size={19} /></button>
-        <button onClick={() => setTab("orders")} style={navBtn(T, tab === "orders")}><ReceiptText size={19} /></button>
-        <button onClick={() => setTab("settings")} style={navBtn(T, tab === "settings")}><SettingsIcon size={19} /></button>
-      </div>
+      {sidebarOpen && (
+        <div style={{ position: "fixed", inset: 0, background: T.overlay, zIndex: 40 }} onClick={() => setSidebarOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 240, background: T.bgElevated, borderRight: `1px solid ${T.cardBorder}`, padding: "20px 16px", display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24, padding: "0 4px" }}>
+              <NotebookText size={20} color={T.accent} />
+              <span style={{ fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600 }}>Nota</span>
+            </div>
+            <SidebarLink T={T} icon={<LayoutDashboard size={17} />} label="Dashboard" active={tab === "dashboard"} onClick={() => { setTab("dashboard"); setSidebarOpen(false); }} />
+            <SidebarLink T={T} icon={<ReceiptText size={17} />} label="Orders" active={tab === "orders"} onClick={() => { setTab("orders"); setOrdersFilterPreset(null); setSidebarOpen(false); }} />
+            <SidebarLink T={T} icon={<SettingsIcon size={17} />} label="Settings" active={tab === "settings"} onClick={() => { setTab("settings"); setSidebarOpen(false); }} />
+            <div style={{ flex: 1 }} />
+            <SidebarLink T={T} icon={<LogOut size={17} />} label="Log out" onClick={() => { setIsLoggedIn(false); setSidebarOpen(false); }} danger />
+          </div>
+        </div>
+      )}
 
       {toast && (
         <div style={{ position: "fixed", bottom: 74, left: "50%", transform: "translateX(-50%)", background: T.accent, color: T.isDark ? "#06101D" : "#F4F9FF", padding: "10px 18px", borderRadius: 6, fontSize: 13.5, display: "flex", alignItems: "center", gap: 6, zIndex: 30 }}>
@@ -225,6 +257,19 @@ export default function App() {
   );
 }
 
-function navBtn(T, active) {
-  return { border: "none", background: "transparent", cursor: "pointer", color: active ? T.accent : T.inkMuted, display: "flex", alignItems: "center", justifyContent: "center", padding: 6 };
+function SidebarLink({ T, icon, label, active, onClick, danger }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 10px", borderRadius: 8,
+        border: "none", cursor: "pointer", fontSize: 13.5, fontFamily: "'Work Sans', sans-serif", textAlign: "left",
+        background: active ? T.accentSoft : "transparent",
+        color: danger ? T.negative : active ? T.accent : T.inkMuted,
+        marginBottom: 2,
+      }}
+    >
+      {icon} {label}
+    </button>
+  );
 }
