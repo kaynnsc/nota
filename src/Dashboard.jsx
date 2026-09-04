@@ -90,8 +90,8 @@ export default function Dashboard({ T, data, onNavigate }) {
 
 return (
     <div style={{ padding: "0 20px" }}>
-      {/* 1. SEARCH BAR - Sharpened corners from 999 to 8 */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 8, padding: "10px 16px", marginBottom: 14, boxShadow: "0 1px 3px rgba(0,0,0,0.02)" }}>
+      {/* 1. SEARCH BAR */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 999, padding: "10px 16px", marginBottom: 16 }}>
         <Search size={16} color={T.inkFaint} />
         <input
           value={searchInput}
@@ -102,26 +102,41 @@ return (
         />
       </div>
 
-      {/* 2. ACTIVE WARRANTY - Bold, uppercase, letter-spacing */}
-      <button
-        onClick={() => onNavigate({ type: "warranty" })}
-        style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", background: "transparent", border: "none", cursor: "pointer", padding: "6px 2px 12px", fontFamily: "'Work Sans', sans-serif" }}
-      >
-        <span style={{ fontSize: 12, fontWeight: 700, color: T.ink, textTransform: "uppercase", letterSpacing: 0.5 }}>Active Warranty</span>
-        <ChevronRight size={16} color={T.inkFaint} />
-      </button>
-
-      {/* 3. QUICK STATS (4 BOXES) */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-        <StatCard T={T} icon={<ShoppingCart size={18} />} label="Total orders" value={stats.totalOrders} color={T.accent} onClick={() => onNavigate(null)} />
-        <StatCard T={T} icon={<ShieldCheck size={18} />} label="Active warranty" value={stats.activeWarranty} color={T.positive} onClick={() => onNavigate({ type: "warranty" })} />
-        <StatCard T={T} icon={<Wallet size={18} />} label="Today's profit" value={formatIDR(stats.todaysProfit)} color={T.accent} onClick={() => onNavigate({ type: "today" })} />
-        <StatCard T={T} icon={<TrendingUp size={18} />} label="Monthly profit" value={formatIDR(stats.monthlyProfit)} color={T.positive} onClick={() => onNavigate({ type: "month" })} />
+      {/* 2. ACTIVE WARRANTY & ITS RECTANGLE BOX */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 4px 8px" }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: T.ink, textTransform: "uppercase", letterSpacing: 0.5 }}>Active Warranty</span>
+          <ChevronRight size={16} color={T.ink} />
+        </div>
+        {/* The large box below Active Warranty */}
+        <button 
+          onClick={() => onNavigate({ type: "warranty" })}
+          style={{ width: "100%", background: T.bgElevated, border: `1px solid ${T.inkMuted}`, borderRadius: 12, padding: "16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left" }}
+        >
+          <div style={{ width: 40, height: 40, borderRadius: 8, background: T.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", color: T.positive }}>
+            <ShieldCheck size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "'Fraunces', serif", color: T.ink }}>{stats.activeWarranty}</div>
+            <div style={{ fontSize: 12, color: T.inkMuted, fontWeight: 500 }}>Active & Lifetime Plans</div>
+          </div>
+        </button>
       </div>
 
-      {/* 4. ROUND DIAGRAM (MOVED UP) - Pie Chart */}
+      {/* 3. THE FOUR BOXES (INSIDE A WHITE BOUNDING BOX) */}
+      <div style={{ background: T.bgElevated, borderRadius: 16, padding: 16, marginBottom: 16, border: `1px solid ${T.cardBorder}` }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          {/* Using T.card for the inner boxes to match the grey fill in your mockup */}
+          <StatCard T={T} icon={<ShoppingCart size={18} />} label="Total orders" value={stats.totalOrders} color={T.accent} onClick={() => onNavigate(null)} />
+          <StatCard T={T} icon={<Wallet size={18} />} label="Total profit" value={formatIDR(stats.totalProfit)} color={T.positive} onClick={() => onNavigate(null)} />
+          <StatCard T={T} icon={<Wallet size={18} />} label="Today's profit" value={formatIDR(stats.todaysProfit)} color={T.accent} onClick={() => onNavigate({ type: "today" })} />
+          <StatCard T={T} icon={<TrendingUp size={18} />} label="Monthly profit" value={formatIDR(stats.monthlyProfit)} color={T.positive} onClick={() => onNavigate({ type: "month" })} />
+        </div>
+      </div>
+
+      {/* 4. ROUND DIAGRAM (PIE CHART) - MOVED BELOW THE 4 BOXES */}
       {appDistribution.length > 0 && (
-        <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 10, padding: "16px 12px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, boxShadow: "0 2px 5px rgba(0,0,0,0.03)" }}>
+        <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 16, padding: "16px 12px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
           <ResponsiveContainer width={110} height={110}>
             <PieChart>
               <Pie data={appDistribution} dataKey="value" nameKey="name" innerRadius={30} outerRadius={50} paddingAngle={2}>
@@ -142,8 +157,8 @@ return (
         </div>
       )}
 
-      {/* 5. BAR CHART (MOVED DOWN) */}
-      <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 10, padding: "16px 12px", marginBottom: 16, boxShadow: "0 2px 5px rgba(0,0,0,0.03)" }}>
+      {/* 5. BAR CHART */}
+      <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 16, padding: "16px 12px", marginBottom: 16 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMuted, padding: "0 8px 8px", textTransform: "uppercase", letterSpacing: 0.5 }}>Profit — last 7 days</div>
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={last7DaysChart}>
@@ -170,7 +185,7 @@ return (
               <div
                 key={o.id}
                 onClick={() => onNavigate({ type: "search", query: o.customer })}
-                style={{ background: T.dangerSoft, border: `1px solid ${T.negative}33`, borderRadius: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                style={{ background: T.dangerSoft, border: `1px solid ${T.negative}33`, borderRadius: 12, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
               >
                 <div>
                   <div style={{ fontSize: 13.5, fontWeight: 600, color: T.ink }}>{o.customer}</div>
@@ -192,18 +207,18 @@ return (
   );
 }
 
-// Updated StatCard with sharper corners, depth, and boldened text
+// Updated StatCard: Now flat (no border) and using T.card background to mimic the mockup's inner boxes
 function StatCard({ T, icon, label, value, color, onClick }) {
   return (
     <button
       onClick={onClick}
-      style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 10, padding: 14, cursor: onClick ? "pointer" : "default", textAlign: "left", fontFamily: "'Work Sans', sans-serif", boxShadow: "0 2px 5px rgba(0,0,0,0.03)" }}
+      style={{ background: T.card, border: "none", borderRadius: 12, padding: 14, cursor: onClick ? "pointer" : "default", textAlign: "left", fontFamily: "'Work Sans', sans-serif" }}
     >
-      <div style={{ width: 32, height: 32, borderRadius: 6, background: T.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", color, marginBottom: 8 }}>
+      <div style={{ width: 32, height: 32, borderRadius: 8, background: T.bgElevated, display: "flex", alignItems: "center", justifyContent: "center", color, marginBottom: 8, border: `1px solid ${T.cardBorder}` }}>
         {icon}
       </div>
       <div style={{ fontSize: 11.5, color: T.inkMuted, fontWeight: 500 }}>{label}</div>
-      <div style={{ fontSize: 17, fontWeight: 700, fontFamily: "'Fraunces', serif", color: T.ink, marginTop: 2 }}>{value}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Fraunces', serif", color: T.ink, marginTop: 2 }}>{value}</div>
     </button>
   );
 }
