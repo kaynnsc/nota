@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { ShoppingCart, ShieldCheck, Wallet, TrendingUp, AlertTriangle, Search, ChevronRight } from "lucide-react";
+import { ShoppingCart, ShieldCheck, Wallet, TrendingUp, Search, ChevronRight, X, AlertTriangle } from "lucide-react";
 
 function formatIDR(n) {
   const num = Number(n) || 0;
@@ -28,6 +28,7 @@ export function warrantyInfo(order, settings) {
 export default function Dashboard({ T, data, onNavigate }) {
   const { orders, settings } = data;
   const [searchInput, setSearchInput] = useState("");
+  const [viewingOrder, setViewingOrder] = useState(null); // Controls the read-only modal
 
   const runSearch = () => {
     if (searchInput.trim()) onNavigate({ type: "search", query: searchInput.trim() });
@@ -58,8 +59,7 @@ export default function Dashboard({ T, data, onNavigate }) {
     return orders
       .map((o) => ({ o, w: warrantyInfo(o, settings) }))
       .filter(({ w }) => w.status === "expiring" || w.status === "expired")
-      .sort((a, b) => a.w.daysLeft - b.w.daysLeft)
-      .slice(0, 8);
+      .sort((a, b) => a.w.daysLeft - b.w.daysLeft);
   }, [orders, settings]);
 
   const last7DaysChart = useMemo(() => {
@@ -88,9 +88,9 @@ export default function Dashboard({ T, data, onNavigate }) {
     });
   }, [orders, settings]);
 
-return (
+  return (
     <div style={{ padding: "0 20px" }}>
-      {/* 1. SEARCH BAR */}
+      {/* SEARCH BAR */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 999, padding: "10px 16px", marginBottom: 16 }}>
         <Search size={16} color={T.inkFaint} />
         <input
@@ -102,39 +102,52 @@ return (
         />
       </div>
 
-      {/* 2. ACTIVE WARRANTY & ITS RECTANGLE BOX */}
+      {/* ACTIVE WARRANTY (Needs Attention) */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 4px 8px" }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: T.ink, textTransform: "uppercase", letterSpacing: 0.5 }}>Active Warranty</span>
-          <ChevronRight size={16} color={T.ink} />
+          <button onClick={() => onNavigate({ type: "warranty" })} style={{ background: "none", border: "none", color: T.accent, fontSize: 12, cursor: "pointer", fontWeight: 500 }}>
+            View all
+          </button>
         </div>
-        {/* The large box below Active Warranty */}
-        <button 
-          onClick={() => onNavigate({ type: "warranty" })}
-          style={{ width: "100%", background: T.bgElevated, border: `1px solid ${T.inkMuted}`, borderRadius: 12, padding: "16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left" }}
-        >
-          <div style={{ width: 40, height: 40, borderRadius: 8, background: T.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", color: T.positive }}>
-            <ShieldCheck size={20} />
-          </div>
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "'Fraunces', serif", color: T.ink }}>{stats.activeWarranty}</div>
-            <div style={{ fontSize: 12, color: T.inkMuted, fontWeight: 500 }}>Active & Lifetime Plans</div>
-          </div>
-        </button>
+        
+        <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 16, padding: "12px", display: "flex", flexDirection: "column", gap: 8 }}>
+          {reminders.length === 0 ? (
+            <div style={{ textAlign: "center", fontSize: 12, color: T.inkFaint, padding: "12px 0" }}>
+              All warranties are healthy.
+            </div>
+          ) : (
+            reminders.slice(0, 3).map(({ o, w }) => (
+              <div
+                key={o.id}
+                onClick={() => setViewingOrder(o)}
+                style={{ background: T.bg, border: `1px solid ${T.cardBorder}`, borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+              >
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: T.ink }}>{o.customer}</div>
+                  <div style={{ fontSize: 11.5, color: T.inkMuted }}>{settings.apps.find((a) => a.id === o.appId)?.label || "—"}</div>
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: T.negative, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
+                  <AlertTriangle size={12} />
+                  {w.status === "expired" ? `Expired ${Math.abs(w.daysLeft)}d ago` : w.daysLeft === 0 ? "Expires today" : `${w.daysLeft}d left`}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
-      {/* 3. THE FOUR BOXES (INSIDE A WHITE BOUNDING BOX) */}
-      <div style={{ background: T.bgElevated, borderRadius: 16, padding: 16, marginBottom: 16, border: `1px solid ${T.cardBorder}` }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          {/* Using T.card for the inner boxes to match the grey fill in your mockup */}
-          <StatCard T={T} icon={<ShoppingCart size={18} />} label="Total orders" value={stats.totalOrders} color={T.accent} onClick={() => onNavigate(null)} />
-          <StatCard T={T} icon={<Wallet size={18} />} label="Total profit" value={formatIDR(stats.totalProfit)} color={T.positive} onClick={() => onNavigate(null)} />
-          <StatCard T={T} icon={<Wallet size={18} />} label="Today's profit" value={formatIDR(stats.todaysProfit)} color={T.accent} onClick={() => onNavigate({ type: "today" })} />
-          <StatCard T={T} icon={<TrendingUp size={18} />} label="Monthly profit" value={formatIDR(stats.monthlyProfit)} color={T.positive} onClick={() => onNavigate({ type: "month" })} />
+      {/* 4 STAT BOXES (Unclickable, matching the provided screenshot) */}
+      <div style={{ background: T.bgElevated, borderRadius: 16, padding: "18px 16px", marginBottom: 16, border: `1px solid ${T.cardBorder}` }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <StatCard T={T} icon={<ShoppingCart size={16} />} label="Total orders" value={stats.totalOrders} color={T.accent} />
+          <StatCard T={T} icon={<Wallet size={16} />} label="Total profit" value={formatIDR(stats.totalProfit)} color={T.positive} />
+          <StatCard T={T} icon={<Wallet size={16} />} label="Today's profit" value={formatIDR(stats.todaysProfit)} color={T.accent} />
+          <StatCard T={T} icon={<TrendingUp size={16} />} label="Monthly profit" value={formatIDR(stats.monthlyProfit)} color={T.positive} />
         </div>
       </div>
 
-      {/* 4. ROUND DIAGRAM (PIE CHART) - MOVED BELOW THE 4 BOXES */}
+      {/* ROUND DIAGRAM (PIE CHART) */}
       {appDistribution.length > 0 && (
         <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 16, padding: "16px 12px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
           <ResponsiveContainer width={110} height={110}>
@@ -157,7 +170,7 @@ return (
         </div>
       )}
 
-      {/* 5. BAR CHART */}
+      {/* BAR CHART */}
       <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 16, padding: "16px 12px", marginBottom: 16 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMuted, padding: "0 8px 8px", textTransform: "uppercase", letterSpacing: 0.5 }}>Profit — last 7 days</div>
         <ResponsiveContainer width="100%" height={160}>
@@ -174,51 +187,67 @@ return (
         </ResponsiveContainer>
       </div>
 
-      {/* 6. REMINDERS */}
-      {reminders.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: T.negative, display: "flex", alignItems: "center", gap: 6, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>
-            <AlertTriangle size={14} /> Needs attention ({reminders.length})
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {reminders.map(({ o, w }) => (
-              <div
-                key={o.id}
-                onClick={() => onNavigate({ type: "search", query: o.customer })}
-                style={{ background: T.dangerSoft, border: `1px solid ${T.negative}33`, borderRadius: 12, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
-              >
-                <div>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: T.ink }}>{o.customer}</div>
-                  <div style={{ fontSize: 11.5, color: T.inkMuted }}>{settings.apps.find((a) => a.id === o.appId)?.label || "—"}</div>
-                </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: T.negative, whiteSpace: "nowrap" }}>
-                  {w.status === "expired" ? `Expired ${Math.abs(w.daysLeft)}d ago` : w.daysLeft === 0 ? "Expires today" : `${w.daysLeft}d left`}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div style={{ fontSize: 11, color: T.inkFaint, textAlign: "center", padding: "8px 0 20px" }}>
         All totals above are calculated automatically from your order list.
+      </div>
+
+      {/* READ-ONLY VIEW MODAL */}
+      {viewingOrder && (
+        <OrderViewModal T={T} order={viewingOrder} settings={settings} onClose={() => setViewingOrder(null)} />
+      )}
+    </div>
+  );
+}
+
+// Flat, unclickable stat layout matching the provided image
+function StatCard({ T, icon, label, value, color }) {
+  return (
+    <div style={{ textAlign: "left", fontFamily: "'Work Sans', sans-serif" }}>
+      <div style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${color}40`, display: "flex", alignItems: "center", justifyContent: "center", color, marginBottom: 10 }}>
+        {icon}
+      </div>
+      <div style={{ fontSize: 11.5, color: T.inkMuted, fontWeight: 500 }}>{label}</div>
+      <div style={{ fontSize: 17, fontWeight: 700, fontFamily: "'Fraunces', serif", color: T.ink, marginTop: 4 }}>{value}</div>
+    </div>
+  );
+}
+
+// Simple read-only modal for viewing order details
+function OrderViewModal({ T, order, settings, onClose }) {
+  const app = settings.apps.find((a) => a.id === order.appId)?.label || "Unknown App";
+  const plan = settings.plans.find((p) => p.id === order.planId)?.label || "—";
+  const platform = settings.platforms.find((p) => p.id === order.platformId)?.label || "—";
+  const duration = settings.durations.find((d) => d.id === order.durationId)?.label || "—";
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: T.overlay, display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 60 }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: T.bg, borderRadius: "16px 16px 0 0", padding: 22, width: "100%", maxWidth: 480, maxHeight: "88vh", overflowY: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 18, margin: 0, fontWeight: 600 }}>Order Details</h3>
+          <button onClick={onClose} style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 5, borderRadius: 5, border: "none", background: "transparent", cursor: "pointer", color: T.inkMuted }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <ViewField T={T} label="Customer">{order.customer}</ViewField>
+          <ViewField T={T} label="Platform">{platform}</ViewField>
+          <ViewField T={T} label="App & Plan">{app} — {plan} ({duration})</ViewField>
+          <ViewField T={T} label="Account Data">{order.account}</ViewField>
+          <ViewField T={T} label="Password">{order.password}</ViewField>
+          <ViewField T={T} label="Contact">{order.contact || "—"}</ViewField>
+          <ViewField T={T} label="Notes">{order.notes || "—"}</ViewField>
+        </div>
       </div>
     </div>
   );
 }
 
-// Updated StatCard: Now flat (no border) and using T.card background to mimic the mockup's inner boxes
-function StatCard({ T, icon, label, value, color, onClick }) {
+function ViewField({ T, label, children }) {
   return (
-    <button
-      onClick={onClick}
-      style={{ background: T.card, border: "none", borderRadius: 12, padding: 14, cursor: onClick ? "pointer" : "default", textAlign: "left", fontFamily: "'Work Sans', sans-serif" }}
-    >
-      <div style={{ width: 32, height: 32, borderRadius: 8, background: T.bgElevated, display: "flex", alignItems: "center", justifyContent: "center", color, marginBottom: 8, border: `1px solid ${T.cardBorder}` }}>
-        {icon}
-      </div>
-      <div style={{ fontSize: 11.5, color: T.inkMuted, fontWeight: 500 }}>{label}</div>
-      <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Fraunces', serif", color: T.ink, marginTop: 2 }}>{value}</div>
-    </button>
+    <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 8, padding: "10px 12px" }}>
+      <div style={{ fontSize: 11, color: T.inkFaint, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.3 }}>{label}</div>
+      <div style={{ fontSize: 13.5, color: T.ink, fontWeight: 500 }}>{children}</div>
+    </div>
   );
 }
