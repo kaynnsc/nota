@@ -298,8 +298,6 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
             </select>
             <select value={deliveredFilter} onChange={(e) => setDeliveredFilter(e.target.value)} style={filterSelectStyle(T)}>
               <option value="all">All status</option>
-              <option value="taken">Taken</option>
-              <option value="pending">Pending</option>
             </select>
             <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} style={filterSelectStyle(T)}>
               <option value="all">All dates</option>
@@ -353,12 +351,6 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
                   {w.status === "expiring" && <span style={{ color: T.negative }}> · {w.daysLeft}d left</span>}
                 </div>
               </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); toggleDelivered(o.id); }}
-                style={{ fontSize: 10.5, padding: "4px 9px", borderRadius: 999, border: "none", cursor: "pointer", flexShrink: 0, background: o.delivered ? `${T.positive}22` : T.card, color: o.delivered ? T.positive : T.inkFaint }}
-              >
-                {o.delivered ? "Taken" : "Pending"}
-              </button>
               <button onClick={(e) => { e.stopPropagation(); setEditingOrder(o); }} style={iconBtnStyle(T)}><Pencil size={14} /></button>
               <button onClick={(e) => { e.stopPropagation(); deleteOrder(o.id); }} style={{ ...iconBtnStyle(T), color: T.negative }}><Trash2 size={14} /></button>
             </div>
