@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { ShoppingCart, ShieldCheck, Wallet, TrendingUp, Search, ChevronRight, X, AlertTriangle, Edit2 } from "lucide-react";
+import { ShoppingCart, ShieldCheck, Wallet, Search, X, Edit2 } from "lucide-react";
 
 function formatIDR(n) {
   const num = Number(n) || 0;
@@ -90,64 +90,72 @@ export default function Dashboard({ T, data, onNavigate }) {
 
   return (
     <div style={{ padding: "0 20px" }}>
-      {/* SEARCH BAR */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 999, padding: "10px 16px", marginBottom: 16 }}>
-        <Search size={16} color={T.inkFaint} />
+      {/* HERO: the number a shop owner checks first */}
+      <div style={{ background: T.accent, borderRadius: 18, padding: "20px 20px", marginBottom: 12, color: T.isDark ? "#06101D" : "#F4F9FF" }}>
+        <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 500 }}>Profit this month</div>
+        <div style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 700, marginTop: 4 }}>{formatIDR(stats.monthlyProfit)}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, fontSize: 12.5, opacity: 0.9 }}>
+          <span>Today: {formatIDR(stats.todaysProfit)}</span>
+          <button onClick={() => onNavigate({ type: "month" })} style={{ background: "rgba(255,255,255,0.18)", border: "none", color: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999, cursor: "pointer", fontWeight: 500 }}>
+            View orders
+          </button>
+        </div>
+      </div>
+
+      {/* horizontal-scrolling secondary stats — no cramped grid, no wrapping on narrow phones */}
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 18, paddingBottom: 2 }}>
+        <MiniStat T={T} icon={<ShoppingCart size={14} />} label="Total orders" value={stats.totalOrders} color={T.accent} onClick={() => onNavigate(null)} />
+        <MiniStat T={T} icon={<ShieldCheck size={14} />} label="Active warranty" value={stats.activeWarranty} color={T.positive} onClick={() => onNavigate({ type: "warranty" })} />
+        <MiniStat T={T} icon={<Wallet size={14} />} label="Total profit" value={formatIDR(stats.totalProfit)} color={T.positive} onClick={() => onNavigate(null)} />
+      </div>
+
+      {/* NEEDS ATTENTION */}
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <span style={{ fontSize: 13.5, fontWeight: 600, color: T.ink }}>Needs attention</span>
+          {reminders.length > 0 && (
+            <button onClick={() => onNavigate({ type: "warranty" })} style={{ background: "none", border: "none", color: T.accent, fontSize: 12, cursor: "pointer", fontWeight: 500 }}>
+              See all ({reminders.length})
+            </button>
+          )}
+        </div>
+
+        {reminders.length === 0 ? (
+          <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 14, padding: "16px", textAlign: "center", fontSize: 12.5, color: T.inkFaint }}>
+            All warranties are healthy — nothing expiring soon.
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {reminders.slice(0, 3).map(({ o, w }) => (
+              <div
+                key={o.id}
+                onClick={() => setViewingOrder(o)}
+                style={{ background: T.dangerSoft, border: `1px solid ${T.negative}33`, borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 500, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.customer}</div>
+                  <div style={{ fontSize: 11.5, color: T.inkMuted }}>{settings.apps.find((a) => a.id === o.appId)?.label || "—"}</div>
+                </div>
+                <div style={{ fontSize: 11.5, fontWeight: 500, color: T.negative, whiteSpace: "nowrap", flexShrink: 0, marginLeft: 8 }}>
+                  {w.status === "expired" ? `Expired ${Math.abs(w.daysLeft)}d ago` : w.daysLeft === 0 ? "Expires today" : `${w.daysLeft}d left`}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* SEARCH — secondary, not the first thing on the page */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 10, padding: "10px 14px", marginBottom: 18 }}>
+        <Search size={15} color={T.inkFaint} />
         <input
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && runSearch()}
-          placeholder="Search orders, customers"
-          style={{ border: "none", outline: "none", background: "transparent", flex: 1, fontSize: 14, color: T.ink, fontFamily: "'Work Sans', sans-serif" }}
+          placeholder="Search orders or customers"
+          style={{ border: "none", outline: "none", background: "transparent", flex: 1, fontSize: 15, color: T.ink, fontFamily: "'Work Sans', sans-serif" }}
         />
       </div>
-
-      {/* ACTIVE WARRANTY (Needs Attention) */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 4px 8px" }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: T.ink, textTransform: "uppercase", letterSpacing: 0.5 }}>Active Warranty</span>
-          <button onClick={() => onNavigate({ type: "warranty" })} style={{ background: "none", border: "none", color: T.accent, fontSize: 12, cursor: "pointer", fontWeight: 500 }}>
-            View all
-          </button>
-        </div>
-        
-        <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 16, padding: "12px", display: "flex", flexDirection: "column", gap: 8 }}>
-          {reminders.length === 0 ? (
-            <div style={{ textAlign: "center", fontSize: 12, color: T.inkFaint, padding: "12px 0" }}>
-              All warranties are healthy.
-            </div>
-          ) : (
-            reminders.slice(0, 3).map(({ o, w }) => (
-              <div
-                key={o.id}
-                onClick={() => setViewingOrder(o)}
-                style={{ background: T.bg, border: `1px solid ${T.cardBorder}`, borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
-              >
-                <div>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: T.ink }}>{o.customer}</div>
-                  <div style={{ fontSize: 11.5, color: T.inkMuted }}>{settings.apps.find((a) => a.id === o.appId)?.label || "—"}</div>
-                </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: T.negative, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
-                  <AlertTriangle size={12} />
-                  {w.status === "expired" ? `Expired ${Math.abs(w.daysLeft)}d ago` : w.daysLeft === 0 ? "Expires today" : `${w.daysLeft}d left`}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* 4 STAT BOXES */}
-      <div style={{ background: T.bgElevated, borderRadius: 16, padding: "18px 16px", marginBottom: 16, border: `1px solid ${T.cardBorder}` }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <StatCard T={T} icon={<ShoppingCart size={16} />} label="Total orders" value={stats.totalOrders} color={T.accent} />
-          <StatCard T={T} icon={<Wallet size={16} />} label="Total profit" value={formatIDR(stats.totalProfit)} color={T.positive} />
-          <StatCard T={T} icon={<Wallet size={16} />} label="Today's profit" value={formatIDR(stats.todaysProfit)} color={T.accent} />
-          <StatCard T={T} icon={<TrendingUp size={16} />} label="Monthly profit" value={formatIDR(stats.monthlyProfit)} color={T.positive} />
-        </div>
-      </div>
-
-      {/* ROUND DIAGRAM (PIE CHART) */}
       {appDistribution.length > 0 && (
         <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 16, padding: "16px 12px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
           <ResponsiveContainer width={110} height={110}>
@@ -208,15 +216,23 @@ export default function Dashboard({ T, data, onNavigate }) {
   );
 }
 
-function StatCard({ T, icon, label, value, color }) {
+function MiniStat({ T, icon, label, value, color, onClick }) {
   return (
-    <div style={{ textAlign: "left", fontFamily: "'Work Sans', sans-serif" }}>
-      <div style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${color}40`, display: "flex", alignItems: "center", justifyContent: "center", color, marginBottom: 10 }}>
+    <button
+      onClick={onClick}
+      style={{
+        flexShrink: 0, display: "flex", alignItems: "center", gap: 8, background: T.bgElevated, border: `1px solid ${T.cardBorder}`,
+        borderRadius: 999, padding: "9px 14px 9px 10px", cursor: onClick ? "pointer" : "default", fontFamily: "'Work Sans', sans-serif",
+      }}
+    >
+      <div style={{ width: 26, height: 26, borderRadius: "50%", background: `${color}1A`, display: "flex", alignItems: "center", justifyContent: "center", color, flexShrink: 0 }}>
         {icon}
       </div>
-      <div style={{ fontSize: 11.5, color: T.inkMuted, fontWeight: 500 }}>{label}</div>
-      <div style={{ fontSize: 17, fontWeight: 700, fontFamily: "'Fraunces', serif", color: T.ink, marginTop: 4 }}>{value}</div>
-    </div>
+      <div style={{ textAlign: "left" }}>
+        <div style={{ fontSize: 10.5, color: T.inkFaint, whiteSpace: "nowrap" }}>{label}</div>
+        <div style={{ fontSize: 13.5, fontWeight: 600, color: T.ink, whiteSpace: "nowrap" }}>{value}</div>
+      </div>
+    </button>
   );
 }
 
@@ -241,61 +257,39 @@ function OrderViewModal({ T, order, settings, onClose, onEdit }) {
           </button>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          
-          {/* ROW 1: Date & Customer */}
-          <div style={{ display: "flex", gap: 10 }}>
-            <ReadOnlyField T={T} label="Tanggal order" style={{ flex: 1 }}>{order.date || "—"}</ReadOnlyField>
-            <ReadOnlyField T={T} label="Nama customer" style={{ flex: 1 }}>{order.customer || "—"}</ReadOnlyField>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <div style={{ textAlign: "center", paddingBottom: 14, marginBottom: 4, borderBottom: `1px dashed ${T.cardBorder}` }}>
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: T.ink }}>{order.customer || "Unnamed"}</div>
+            <div style={{ fontSize: 12, color: T.inkMuted, marginTop: 2 }}>{app} · {plan} · {duration}</div>
           </div>
 
-          {/* ROW 2: Platform & Contact */}
-          <div style={{ display: "flex", gap: 10 }}>
-            <ReadOnlyField T={T} label="Kode (Platform)" style={{ flex: 1 }}>{platform}</ReadOnlyField>
-            <ReadOnlyField T={T} label="Kontak customer" style={{ flex: 1 }}>{order.contact || "—"}</ReadOnlyField>
-          </div>
+          <ReceiptRow T={T} label="Tanggal order" value={order.date || "—"} />
+          <ReceiptRow T={T} label="Platform (Kode)" value={platform} />
+          <ReceiptRow T={T} label="Kontak customer" value={order.contact || "—"} />
+          <div style={{ height: 8 }} />
+          <ReceiptRow T={T} label="Data akun" value={order.account || "—"} mono />
+          <ReceiptRow T={T} label="Password" value={order.password || "—"} mono />
+          <div style={{ height: 8 }} />
+          <ReceiptRow T={T} label="First hand" value={supplier} />
+          {supplierContactName && <ReceiptRow T={T} label="Admin / CP" value={`${supplierContactName} — ${order.supplierContact || ""}`} />}
+          {!supplierContactName && order.supplierContact && <ReceiptRow T={T} label="Contact FH" value={order.supplierContact} />}
+          <div style={{ height: 8 }} />
+          <ReceiptRow T={T} label="Harga jual" value={`Rp ${(Number(order.sellPrice) || 0).toLocaleString("id-ID")}`} />
+          <ReceiptRow T={T} label="Harga beli" value={`Rp ${(Number(order.costPrice) || 0).toLocaleString("id-ID")}`} />
 
-          {/* ROW 3: App, Plan, Duration */}
-          <div style={{ display: "flex", gap: 10 }}>
-            <ReadOnlyField T={T} label="Aplikasi" style={{ flex: 1 }}>{app}</ReadOnlyField>
-            <ReadOnlyField T={T} label="Plan" style={{ flex: 1 }}>{plan}</ReadOnlyField>
-            <ReadOnlyField T={T} label="Durasi" style={{ flex: 1 }}>{duration}</ReadOnlyField>
-          </div>
-
-          {/* ROW 4: Account & Password */}
-          <div style={{ display: "flex", gap: 10 }}>
-            <ReadOnlyField T={T} label="Data akun" style={{ flex: 1 }}>{order.account || "—"}</ReadOnlyField>
-            <ReadOnlyField T={T} label="Password" style={{ flex: 1 }}>{order.password || "—"}</ReadOnlyField>
-          </div>
-
-          {/* ROW 5: Supplier info */}
-          <div style={{ display: "flex", gap: 10 }}>
-            <ReadOnlyField T={T} label="First hand (Supplier)" style={{ flex: 1 }}>{supplier}</ReadOnlyField>
-            {selectedSupplier && selectedSupplier.contacts && selectedSupplier.contacts.length > 0 && (
-              <ReadOnlyField T={T} label="Admin / CP" style={{ flex: 1 }}>
-                {supplierContactName ? `${supplierContactName} — ${order.supplierContact || ""}` : (order.supplierContact || "—")}
-              </ReadOnlyField>
-            )}
-            <ReadOnlyField T={T} label="Contact FH" style={{ flex: 1 }}>{order.supplierContact || "—"}</ReadOnlyField>
-          </div>
-
-          {/* ROW 6: Prices */}
-          <div style={{ display: "flex", gap: 10 }}>
-            <ReadOnlyField T={T} label="Harga jual" style={{ flex: 1 }}>Rp {(Number(order.sellPrice) || 0).toLocaleString("id-ID")}</ReadOnlyField>
-            <ReadOnlyField T={T} label="Harga beli" style={{ flex: 1 }}>Rp {(Number(order.costPrice) || 0).toLocaleString("id-ID")}</ReadOnlyField>
-          </div>
-
-          {/* Profit Box */}
-          <div style={{ background: T.accentSoft, borderRadius: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ background: T.accentSoft, borderRadius: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
             <span style={{ fontSize: 12.5, color: T.inkMuted }}>Keuntungan (auto)</span>
             <span style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: profit >= 0 ? T.positive : T.negative }}>Rp {profit.toLocaleString("id-ID")}</span>
           </div>
 
-          {/* Notes */}
-          <ReadOnlyField T={T} label="Catatan">{order.notes || "—"}</ReadOnlyField>
+          {order.notes && (
+            <div style={{ marginTop: 10, fontSize: 12.5, color: T.inkMuted, background: T.card, borderRadius: 8, padding: "10px 12px" }}>
+              {order.notes}
+            </div>
+          )}
 
-          <button onClick={onEdit} style={{ background: T.accent, color: T.isDark ? "#06101D" : "#F4F9FF", border: "none", borderRadius: 8, padding: "10px 16px", fontSize: 13.5, cursor: "pointer", fontFamily: "'Work Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6 }}>
-            <Edit2 size={16} /> View in orders
+          <button onClick={onEdit} style={{ background: T.accent, color: T.isDark ? "#06101D" : "#F4F9FF", border: "none", borderRadius: 8, padding: "12px 16px", fontSize: 14.5, cursor: "pointer", fontFamily: "'Work Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 14 }}>
+            <Edit2 size={16} /> Edit this order
           </button>
         </div>
       </div>
@@ -303,13 +297,11 @@ function OrderViewModal({ T, order, settings, onClose, onEdit }) {
   );
 }
 
-function ReadOnlyField({ T, label, children, style }) {
+function ReceiptRow({ T, label, value, mono }) {
   return (
-    <div style={style}>
-      <label style={{ fontSize: 11.5, color: T.inkFaint, display: "block", marginBottom: 4 }}>{label}</label>
-      <div style={{ border: `1px solid ${T.cardBorder}`, borderRadius: 6, padding: "9px 10px", background: T.bgElevated, color: T.ink, fontFamily: "'Work Sans', sans-serif", fontSize: 13.5, minHeight: 38, display: "flex", alignItems: "center" }}>
-        {children}
-      </div>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "5px 0", fontSize: 13 }}>
+      <span style={{ color: T.inkFaint, flexShrink: 0 }}>{label}</span>
+      <span style={{ color: T.ink, fontFamily: mono ? "monospace" : "'Work Sans', sans-serif", textAlign: "right", wordBreak: "break-word" }}>{value}</span>
     </div>
   );
 }

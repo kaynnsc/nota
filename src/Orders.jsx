@@ -539,100 +539,111 @@ function OrderForm({ T, order, settings, onSave, onClose, onSettingsChange, edit
 
   return (
     <Modal T={T} title={order.customer || order.id ? "Edit order" : "New order"} onClose={onClose}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }} onFocus={() => (editingRef.current = true)} onBlur={() => (editingRef.current = false)}>
-        
-        <div style={{ display: "flex", gap: 10 }}>
-          <Field T={T} label="Tanggal order" style={{ flex: 1 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 18 }} onFocus={() => (editingRef.current = true)} onBlur={() => (editingRef.current = false)}>
+
+        <FormSection T={T} title="Customer">
+          <Field T={T} label="Tanggal order">
             <input type="date" value={form.date} onChange={(e) => set({ date: e.target.value })} style={inputStyle(T)} />
           </Field>
-          <Field T={T} label="Nama customer" style={{ flex: 1 }}>
+          <Field T={T} label="Nama customer">
             <input value={form.customer} onChange={(e) => set({ customer: e.target.value })} style={inputStyle(T)} placeholder="Customer name" />
           </Field>
-        </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <Field T={T} label="Kode" style={{ flex: 1 }}>
+              <select value={form.platformId} onChange={(e) => set({ platformId: e.target.value })} style={inputStyle(T)}>
+                <option value="">— pilih —</option>
+                {settings.platforms.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+              </select>
+            </Field>
+            <Field T={T} label="Kontak" style={{ flex: 1.4 }}>
+              <input value={form.contact} onChange={(e) => set({ contact: e.target.value })} style={inputStyle(T)} placeholder="+62..." />
+            </Field>
+          </div>
+        </FormSection>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <Field T={T} label="Kode (Platform)" style={{ flex: 1 }}>
-            <select value={form.platformId} onChange={(e) => set({ platformId: e.target.value })} style={inputStyle(T)}>
-              <option value="">— pilih —</option>
-              {settings.platforms.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-            </select>
-          </Field>
-          <Field T={T} label="Kontak customer" style={{ flex: 1 }}>
-            <input value={form.contact} onChange={(e) => set({ contact: e.target.value })} style={inputStyle(T)} placeholder="+62..." />
-          </Field>
-        </div>
-
-        <div style={{ display: "flex", gap: 10 }}>
-          <Field T={T} label="Aplikasi" style={{ flex: 1 }}>
+        <FormSection T={T} title="Product">
+          <Field T={T} label="Aplikasi">
             <select value={form.appId} onChange={(e) => set({ appId: e.target.value })} style={inputStyle(T)}>
               <option value="">— pilih —</option>
               {settings.apps.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
             </select>
           </Field>
-          <Field T={T} label="Plan" style={{ flex: 1 }}>
-            <select value={form.planId} onChange={(e) => set({ planId: e.target.value })} style={inputStyle(T)}>
-              <option value="">— pilih —</option>
-              {settings.plans.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-            </select>
-          </Field>
-          <Field T={T} label="Durasi" style={{ flex: 1 }}>
-            <select value={form.durationId} onChange={(e) => set({ durationId: e.target.value })} style={inputStyle(T)}>
-              <option value="">— pilih —</option>
-              {settings.durations.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
-            </select>
-          </Field>
-        </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <Field T={T} label="Plan" style={{ flex: 1 }}>
+              <select value={form.planId} onChange={(e) => set({ planId: e.target.value })} style={inputStyle(T)}>
+                <option value="">— pilih —</option>
+                {settings.plans.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+              </select>
+            </Field>
+            <Field T={T} label="Durasi" style={{ flex: 1 }}>
+              <select value={form.durationId} onChange={(e) => set({ durationId: e.target.value })} style={inputStyle(T)}>
+                <option value="">— pilih —</option>
+                {settings.durations.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+              </select>
+            </Field>
+          </div>
+        </FormSection>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <Field T={T} label="Data akun" style={{ flex: 1 }}>
+        <FormSection T={T} title="Account">
+          <Field T={T} label="Data akun">
             <input value={form.account} onChange={(e) => set({ account: e.target.value })} style={inputStyle(T)} placeholder="email@..." />
           </Field>
-          <Field T={T} label="Password" style={{ flex: 1 }}>
+          <Field T={T} label="Password">
             <input value={form.password} onChange={(e) => set({ password: e.target.value })} style={inputStyle(T)} />
           </Field>
-        </div>
+        </FormSection>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <Field T={T} label="First hand (Supplier)" style={{ flex: 1 }}>
+        <FormSection T={T} title="Supplier">
+          <Field T={T} label="First hand">
             <select value={form.supplierId} onChange={(e) => onSupplierChange(e.target.value)} style={inputStyle(T)}>
               <option value="">— pilih —</option>
               {settings.suppliers.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
           </Field>
           {selectedSupplier && selectedSupplier.contacts && selectedSupplier.contacts.length > 0 && (
-            <Field T={T} label="Admin / CP" style={{ flex: 1 }}>
+            <Field T={T} label="Admin / contact person">
               <select value={form.supplierContactId || ""} onChange={(e) => onSupplierContactChange(e.target.value)} style={inputStyle(T)}>
                 <option value="">— pilih —</option>
                 {selectedSupplier.contacts.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.contact}</option>)}
               </select>
             </Field>
           )}
-          <Field T={T} label="Contact FH" style={{ flex: 1 }}>
+          <Field T={T} label="Contact FH">
             <input value={form.supplierContact} onChange={(e) => set({ supplierContact: e.target.value })} style={inputStyle(T)} />
           </Field>
-        </div>
+        </FormSection>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <Field T={T} label="Harga jual" style={{ flex: 1 }}>
-            <input type="number" value={form.sellPrice} onChange={(e) => set({ sellPrice: parseFloat(e.target.value) || 0 })} style={inputStyle(T)} />
-          </Field>
-          <Field T={T} label="Harga beli" style={{ flex: 1 }}>
-            <input type="number" value={form.costPrice} onChange={(e) => set({ costPrice: parseFloat(e.target.value) || 0 })} style={inputStyle(T)} />
-          </Field>
-        </div>
+        <FormSection T={T} title="Pricing">
+          <div style={{ display: "flex", gap: 10 }}>
+            <Field T={T} label="Harga jual" style={{ flex: 1 }}>
+              <input type="number" value={form.sellPrice} onChange={(e) => set({ sellPrice: parseFloat(e.target.value) || 0 })} style={inputStyle(T)} />
+            </Field>
+            <Field T={T} label="Harga beli" style={{ flex: 1 }}>
+              <input type="number" value={form.costPrice} onChange={(e) => set({ costPrice: parseFloat(e.target.value) || 0 })} style={inputStyle(T)} />
+            </Field>
+          </div>
+          <div style={{ background: T.accentSoft, borderRadius: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 12.5, color: T.inkMuted }}>Keuntungan (auto)</span>
+            <span style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: profit >= 0 ? T.positive : T.negative }}>Rp {profit.toLocaleString("id-ID")}</span>
+          </div>
+        </FormSection>
 
-        <div style={{ background: T.accentSoft, borderRadius: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 12.5, color: T.inkMuted }}>Keuntungan (auto)</span>
-          <span style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: profit >= 0 ? T.positive : T.negative }}>Rp {profit.toLocaleString("id-ID")}</span>
-        </div>
-        
         <Field T={T} label="Catatan">
           <textarea value={form.notes} onChange={(e) => set({ notes: e.target.value })} rows={2} style={{ ...inputStyle(T), resize: "vertical" }} />
         </Field>
 
-        <button onClick={() => onSave(form)} style={{ ...primaryBtnStyle(T), marginTop: 6 }}>Save order</button>
+        <button onClick={() => onSave(form)} style={primaryBtnStyle(T)}>Save order</button>
       </div>
     </Modal>
+  );
+}
+
+function FormSection({ T, title, children }) {
+  return (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 600, color: T.accent, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{children}</div>
+    </div>
   );
 }
 
@@ -660,17 +671,17 @@ function Modal({ children, onClose, title, T }) {
 }
 
 function inputStyle(T) {
-  return { border: `1px solid ${T.cardBorder}`, borderRadius: 6, padding: "9px 10px", background: T.bgElevated, color: T.ink, outline: "none", fontFamily: "'Work Sans', sans-serif", width: "100%", fontSize: 13.5 };
+  return { border: `1px solid ${T.cardBorder}`, borderRadius: 8, padding: "12px 12px", background: T.bgElevated, color: T.ink, outline: "none", fontFamily: "'Work Sans', sans-serif", width: "100%", fontSize: 16 };
 }
 function primaryBtnStyle(T) {
-  return { background: T.accent, color: T.isDark ? "#06101D" : "#F4F9FF", border: "none", borderRadius: 8, padding: "10px 16px", fontSize: 13.5, cursor: "pointer", fontFamily: "'Work Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 };
+  return { background: T.accent, color: T.isDark ? "#06101D" : "#F4F9FF", border: "none", borderRadius: 8, padding: "13px 16px", fontSize: 15, cursor: "pointer", fontFamily: "'Work Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 };
 }
 function iconBtnStyle(T) {
-  return { display: "flex", alignItems: "center", justifyContent: "center", padding: 5, borderRadius: 5, border: "none", background: "transparent", cursor: "pointer", color: T.inkMuted, flexShrink: 0 };
+  return { display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", color: T.inkMuted, flexShrink: 0 };
 }
 function filterSelectStyle(T) {
-  return { border: `1px solid ${T.cardBorder}`, borderRadius: 999, padding: "6px 10px", background: T.card, color: T.ink, outline: "none", fontFamily: "'Work Sans', sans-serif", fontSize: 12, flex: "1 1 auto", minWidth: 100 };
+  return { border: `1px solid ${T.cardBorder}`, borderRadius: 999, padding: "8px 12px", background: T.card, color: T.ink, outline: "none", fontFamily: "'Work Sans', sans-serif", fontSize: 14, flex: "1 1 auto", minWidth: 110 };
 }
 function iconOnlyBtn(T) {
-  return { display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 10, border: `1px solid ${T.cardBorder}`, background: T.bgElevated, cursor: "pointer", color: T.inkMuted, flexShrink: 0 };
+  return { display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, borderRadius: 10, border: `1px solid ${T.cardBorder}`, background: T.bgElevated, cursor: "pointer", color: T.inkMuted, flexShrink: 0 };
 }
