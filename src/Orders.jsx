@@ -437,34 +437,67 @@ function OrderViewModal({ T, order, settings, onClose, onEdit }) {
   const platform = settings.platforms.find((p) => p.id === order.platformId)?.label || "—";
   const duration = settings.durations.find((d) => d.id === order.durationId)?.label || "—";
   const supplier = settings.suppliers.find((s) => s.id === order.supplierId)?.label || "—";
+  const selectedSupplier = settings.suppliers.find((s) => s.id === order.supplierId);
+  const supplierContactName = selectedSupplier?.contacts?.find((c) => c.id === order.supplierContactId)?.name || "";
   
   const profit = (Number(order.sellPrice) || 0) - (Number(order.costPrice) || 0);
 
   return (
     <Modal T={T} title="View Order" onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <ViewField T={T} label="Customer">{order.customer || "—"}</ViewField>
-        <ViewField T={T} label="Tanggal Order">{order.date}</ViewField>
-        <ViewField T={T} label="Platform & Kontak">{platform} {order.contact ? `— ${order.contact}` : ""}</ViewField>
-        <ViewField T={T} label="App & Plan">{app} — {plan} ({duration})</ViewField>
-        <ViewField T={T} label="Data Akun">{order.account || "—"}</ViewField>
-        <ViewField T={T} label="Password">{order.password || "—"}</ViewField>
-        <ViewField T={T} label="Supplier (First Hand)">{supplier} {order.supplierContact ? `— ${order.supplierContact}` : ""}</ViewField>
         
-        <div style={{ display: "flex", gap: 8 }}>
-          <ViewField T={T} label="Harga Jual" style={{ flex: 1 }}>Rp {(Number(order.sellPrice) || 0).toLocaleString("id-ID")}</ViewField>
-          <ViewField T={T} label="Harga Beli" style={{ flex: 1 }}>Rp {(Number(order.costPrice) || 0).toLocaleString("id-ID")}</ViewField>
+        {/* ROW 1: Date & Customer */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <ReadOnlyField T={T} label="Tanggal order" style={{ flex: 1 }}>{order.date || "—"}</ReadOnlyField>
+          <ReadOnlyField T={T} label="Nama customer" style={{ flex: 1 }}>{order.customer || "—"}</ReadOnlyField>
         </div>
-        
-        <ViewField T={T} label="Keuntungan">
-          <span style={{ color: profit >= 0 ? T.positive : T.negative, fontWeight: 700 }}>
-            Rp {profit.toLocaleString("id-ID")}
-          </span>
-        </ViewField>
-        
-        <ViewField T={T} label="Catatan">{order.notes || "—"}</ViewField>
 
-        <button onClick={onEdit} style={{ ...primaryBtnStyle(T), marginTop: 8 }}>
+        {/* ROW 2: Platform & Contact */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <ReadOnlyField T={T} label="Kode (Platform)" style={{ flex: 1 }}>{platform}</ReadOnlyField>
+          <ReadOnlyField T={T} label="Kontak customer" style={{ flex: 1 }}>{order.contact || "—"}</ReadOnlyField>
+        </div>
+
+        {/* ROW 3: App, Plan, Duration */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <ReadOnlyField T={T} label="Aplikasi" style={{ flex: 1 }}>{app}</ReadOnlyField>
+          <ReadOnlyField T={T} label="Plan" style={{ flex: 1 }}>{plan}</ReadOnlyField>
+          <ReadOnlyField T={T} label="Durasi" style={{ flex: 1 }}>{duration}</ReadOnlyField>
+        </div>
+
+        {/* ROW 4: Account & Password */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <ReadOnlyField T={T} label="Data akun" style={{ flex: 1 }}>{order.account || "—"}</ReadOnlyField>
+          <ReadOnlyField T={T} label="Password" style={{ flex: 1 }}>{order.password || "—"}</ReadOnlyField>
+        </div>
+
+        {/* ROW 5: Supplier info */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <ReadOnlyField T={T} label="First hand (Supplier)" style={{ flex: 1 }}>{supplier}</ReadOnlyField>
+          {selectedSupplier && selectedSupplier.contacts && selectedSupplier.contacts.length > 0 && (
+            <ReadOnlyField T={T} label="Admin / CP" style={{ flex: 1 }}>
+              {supplierContactName ? `${supplierContactName} — ${order.supplierContact || ""}` : (order.supplierContact || "—")}
+            </ReadOnlyField>
+          )}
+          <ReadOnlyField T={T} label="Contact FH" style={{ flex: 1 }}>{order.supplierContact || "—"}</ReadOnlyField>
+        </div>
+
+        {/* ROW 6: Prices */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <ReadOnlyField T={T} label="Harga jual" style={{ flex: 1 }}>Rp {(Number(order.sellPrice) || 0).toLocaleString("id-ID")}</ReadOnlyField>
+          <ReadOnlyField T={T} label="Harga beli" style={{ flex: 1 }}>Rp {(Number(order.costPrice) || 0).toLocaleString("id-ID")}</ReadOnlyField>
+        </div>
+
+        {/* Profit Box */}
+        <div style={{ background: T.accentSoft, borderRadius: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 12.5, color: T.inkMuted }}>Keuntungan (auto)</span>
+          <span style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: profit >= 0 ? T.positive : T.negative }}>Rp {profit.toLocaleString("id-ID")}</span>
+        </div>
+
+        {/* Notes */}
+        <ReadOnlyField T={T} label="Catatan">{order.notes || "—"}</ReadOnlyField>
+
+        <button onClick={onEdit} style={{ ...primaryBtnStyle(T), marginTop: 6 }}>
           <Edit2 size={16} /> Edit order
         </button>
       </div>
@@ -472,11 +505,13 @@ function OrderViewModal({ T, order, settings, onClose, onEdit }) {
   );
 }
 
-function ViewField({ T, label, children, style }) {
+function ReadOnlyField({ T, label, children, style }) {
   return (
-    <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 8, padding: "10px 12px", ...style }}>
-      <div style={{ fontSize: 11, color: T.inkFaint, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.3 }}>{label}</div>
-      <div style={{ fontSize: 13.5, color: T.ink, fontWeight: 500 }}>{children}</div>
+    <div style={style}>
+      <label style={{ fontSize: 11.5, color: T.inkFaint, display: "block", marginBottom: 4 }}>{label}</label>
+      <div style={{ border: `1px solid ${T.cardBorder}`, borderRadius: 6, padding: "9px 10px", background: T.bgElevated, color: T.ink, fontFamily: "'Work Sans', sans-serif", fontSize: 13.5, minHeight: 38, display: "flex", alignItems: "center" }}>
+        {children}
+      </div>
     </div>
   );
 }
