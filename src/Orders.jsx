@@ -264,11 +264,11 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
   };
 
   return (
-    <div style={{ padding: "0 20px" }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 999, padding: "9px 14px", flex: 1 }}>
-          <Search size={15} color={T.inkFaint} />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search orders" style={{ border: "none", outline: "none", background: "transparent", flex: 1, fontSize: 13.5, color: T.ink, fontFamily: "'Work Sans', sans-serif" }} />
+    <div style={{ padding: "0 20px", width: "100%", boxSizing: "border-box", overflowX: "hidden" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, width: "100%", boxSizing: "border-box" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 999, padding: "9px 14px", flex: 1, minWidth: 0 }}>
+          <Search size={15} color={T.inkFaint} style={{ flexShrink: 0 }} />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search orders" style={{ border: "none", outline: "none", background: "transparent", flex: 1, minWidth: 0, fontSize: 13.5, color: T.ink, fontFamily: "'Work Sans', sans-serif" }} />
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
@@ -283,8 +283,8 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
       </div>
 
       {showFilters && (
-        <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 12, padding: 12, marginBottom: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 12, padding: 12, marginBottom: 12, display: "flex", flexDirection: "column", gap: 8, width: "100%", boxSizing: "border-box" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", width: "100%" }}>
             <select value={appFilter} onChange={(e) => setAppFilter(e.target.value)} style={filterSelectStyle(T)}>
               <option value="">All apps</option>
               {settings.apps.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
@@ -315,7 +315,7 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, width: "100%", boxSizing: "border-box" }}>
         <button onClick={() => setEditingOrder(emptyOrder())} style={{ ...primaryBtnStyle(T), flex: 1 }}>
           <Plus size={14} /> Add
         </button>
@@ -327,7 +327,7 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
         </button>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", boxSizing: "border-box" }}>
         {filtered.length === 0 && <div style={{ textAlign: "center", color: T.inkFaint, fontSize: 13.5, padding: "24px 0" }}>No orders yet.</div>}
         {filtered.map((o) => {
           const app = settings.apps.find((a) => a.id === o.appId);
@@ -337,7 +337,7 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
             <div
               key={o.id}
               onClick={() => setViewingOrder(o)}
-              style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 12, padding: 12, display: "flex", gap: 10, alignItems: "center", cursor: "pointer" }}
+              style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 12, padding: 12, display: "flex", gap: 10, alignItems: "center", cursor: "pointer", width: "100%", boxSizing: "border-box", overflow: "hidden" }}
             >
               <div style={{ width: 34, height: 34, borderRadius: 8, background: app?.color || T.inkFaint, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
                 {(app?.label || "?")[0].toUpperCase()}
@@ -345,9 +345,9 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
                   <span style={{ fontSize: 14, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.customer || "Unnamed"}</span>
-                  <span style={{ fontFamily: "'Fraunces', serif", fontSize: 13.5, color: T.positive, whiteSpace: "nowrap" }}>+{formatIDR(profit)}</span>
+                  <span style={{ fontFamily: "'Fraunces', serif", fontSize: 13.5, color: T.positive, whiteSpace: "nowrap", flexShrink: 0 }}>+{formatIDR(profit)}</span>
                 </div>
-                <div style={{ fontSize: 11.5, color: T.inkMuted, marginTop: 1 }}>
+                <div style={{ fontSize: 11.5, color: T.inkMuted, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {app?.label || "—"} · {o.date}
                   {w.status === "expired" && <span style={{ color: T.negative }}> · expired</span>}
                   {w.status === "expiring" && <span style={{ color: T.negative }}> · {w.daysLeft}d left</span>}
@@ -405,7 +405,7 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>From Excel or CSV file</div>
-              <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleExcelFile} style={{ fontSize: 13, color: T.ink }} />
+              <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleExcelFile} style={{ fontSize: 13, color: T.ink, width: "100%", boxSizing: "border-box" }} />
             </div>
             <div style={{ borderTop: `1px solid ${T.cardBorder}`, paddingTop: 14 }}>
               <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><Sheet size={13} /> From a public Google Sheet</div>
@@ -417,7 +417,7 @@ export default function OrdersPage({ T, data, persist, flashToast, editingRef, i
             <div style={{ borderTop: `1px solid ${T.cardBorder}`, paddingTop: 14 }}>
               <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>Or paste cells directly</div>
               <textarea value={pasteText} onChange={(e) => setPasteText(e.target.value)} rows={5} placeholder={"Tanggal Order\tNama Customer\tKode\tAplikasi\tPlan\tDurasi\tHarga Jual\tHarga Beli"} style={{ ...inputStyle(T), fontFamily: "monospace", fontSize: 11.5, resize: "vertical" }} />
-              <button onClick={importFromPaste} style={{ ...primaryBtnStyle(T), marginTop: 8 }}>Import pasted data</button>
+              <button onClick={importFromPaste} style={{ ...primaryBtnStyle(T), marginTop: 8, width: "100%" }}>Import pasted data</button>
             </div>
             {importError && <p style={{ color: T.negative, fontSize: 12.5, background: T.dangerSoft, padding: "8px 10px", borderRadius: 4 }}>{importError}</p>}
             <p style={{ fontSize: 11, color: T.inkFaint }}>
@@ -444,52 +444,52 @@ function OrderViewModal({ T, order, settings, onClose, onEdit }) {
 
   return (
     <Modal T={T} title="View Order" onClose={onClose}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", boxSizing: "border-box" }}>
         
         {/* ROW 1: Date & Customer */}
-        <div style={{ display: "flex", gap: 10 }}>
-          <ReadOnlyField T={T} label="Tanggal order" style={{ flex: 1 }}>{order.date || "—"}</ReadOnlyField>
-          <ReadOnlyField T={T} label="Nama customer" style={{ flex: 1 }}>{order.customer || "—"}</ReadOnlyField>
+        <div style={{ display: "flex", gap: 10, width: "100%", boxSizing: "border-box" }}>
+          <ReadOnlyField T={T} label="Tanggal order" style={{ flex: 1, minWidth: 0 }}>{order.date || "—"}</ReadOnlyField>
+          <ReadOnlyField T={T} label="Nama customer" style={{ flex: 1, minWidth: 0 }}>{order.customer || "—"}</ReadOnlyField>
         </div>
 
         {/* ROW 2: Platform & Contact */}
-        <div style={{ display: "flex", gap: 10 }}>
-          <ReadOnlyField T={T} label="Kode (Platform)" style={{ flex: 1 }}>{platform}</ReadOnlyField>
-          <ReadOnlyField T={T} label="Kontak customer" style={{ flex: 1 }}>{order.contact || "—"}</ReadOnlyField>
+        <div style={{ display: "flex", gap: 10, width: "100%", boxSizing: "border-box" }}>
+          <ReadOnlyField T={T} label="Kode (Platform)" style={{ flex: 1, minWidth: 0 }}>{platform}</ReadOnlyField>
+          <ReadOnlyField T={T} label="Kontak customer" style={{ flex: 1, minWidth: 0 }}>{order.contact || "—"}</ReadOnlyField>
         </div>
 
         {/* ROW 3: App, Plan, Duration */}
-        <div style={{ display: "flex", gap: 10 }}>
-          <ReadOnlyField T={T} label="Aplikasi" style={{ flex: 1 }}>{app}</ReadOnlyField>
-          <ReadOnlyField T={T} label="Plan" style={{ flex: 1 }}>{plan}</ReadOnlyField>
-          <ReadOnlyField T={T} label="Durasi" style={{ flex: 1 }}>{duration}</ReadOnlyField>
+        <div style={{ display: "flex", gap: 10, width: "100%", boxSizing: "border-box" }}>
+          <ReadOnlyField T={T} label="Aplikasi" style={{ flex: 1, minWidth: 0 }}>{app}</ReadOnlyField>
+          <ReadOnlyField T={T} label="Plan" style={{ flex: 1, minWidth: 0 }}>{plan}</ReadOnlyField>
+          <ReadOnlyField T={T} label="Durasi" style={{ flex: 1, minWidth: 0 }}>{duration}</ReadOnlyField>
         </div>
 
         {/* ROW 4: Account & Password */}
-        <div style={{ display: "flex", gap: 10 }}>
-          <ReadOnlyField T={T} label="Data akun" style={{ flex: 1 }}>{order.account || "—"}</ReadOnlyField>
-          <ReadOnlyField T={T} label="Password" style={{ flex: 1 }}>{order.password || "—"}</ReadOnlyField>
+        <div style={{ display: "flex", gap: 10, width: "100%", boxSizing: "border-box" }}>
+          <ReadOnlyField T={T} label="Data akun" style={{ flex: 1, minWidth: 0 }}>{order.account || "—"}</ReadOnlyField>
+          <ReadOnlyField T={T} label="Password" style={{ flex: 1, minWidth: 0 }}>{order.password || "—"}</ReadOnlyField>
         </div>
 
         {/* ROW 5: Supplier info */}
-        <div style={{ display: "flex", gap: 10 }}>
-          <ReadOnlyField T={T} label="First hand (Supplier)" style={{ flex: 1 }}>{supplier}</ReadOnlyField>
+        <div style={{ display: "flex", gap: 10, width: "100%", boxSizing: "border-box" }}>
+          <ReadOnlyField T={T} label="First hand (Supplier)" style={{ flex: 1, minWidth: 0 }}>{supplier}</ReadOnlyField>
           {selectedSupplier && selectedSupplier.contacts && selectedSupplier.contacts.length > 0 && (
-            <ReadOnlyField T={T} label="Admin / CP" style={{ flex: 1 }}>
+            <ReadOnlyField T={T} label="Admin / CP" style={{ flex: 1, minWidth: 0 }}>
               {supplierContactName ? `${supplierContactName} — ${order.supplierContact || ""}` : (order.supplierContact || "—")}
             </ReadOnlyField>
           )}
-          <ReadOnlyField T={T} label="Contact FH" style={{ flex: 1 }}>{order.supplierContact || "—"}</ReadOnlyField>
+          <ReadOnlyField T={T} label="Contact FH" style={{ flex: 1, minWidth: 0 }}>{order.supplierContact || "—"}</ReadOnlyField>
         </div>
 
         {/* ROW 6: Prices */}
-        <div style={{ display: "flex", gap: 10 }}>
-          <ReadOnlyField T={T} label="Harga jual" style={{ flex: 1 }}>Rp {(Number(order.sellPrice) || 0).toLocaleString("id-ID")}</ReadOnlyField>
-          <ReadOnlyField T={T} label="Harga beli" style={{ flex: 1 }}>Rp {(Number(order.costPrice) || 0).toLocaleString("id-ID")}</ReadOnlyField>
+        <div style={{ display: "flex", gap: 10, width: "100%", boxSizing: "border-box" }}>
+          <ReadOnlyField T={T} label="Harga jual" style={{ flex: 1, minWidth: 0 }}>Rp {(Number(order.sellPrice) || 0).toLocaleString("id-ID")}</ReadOnlyField>
+          <ReadOnlyField T={T} label="Harga beli" style={{ flex: 1, minWidth: 0 }}>Rp {(Number(order.costPrice) || 0).toLocaleString("id-ID")}</ReadOnlyField>
         </div>
 
         {/* Profit Box */}
-        <div style={{ background: T.accentSoft, borderRadius: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ background: T.accentSoft, borderRadius: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", boxSizing: "border-box" }}>
           <span style={{ fontSize: 12.5, color: T.inkMuted }}>Keuntungan (auto)</span>
           <span style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: profit >= 0 ? T.positive : T.negative }}>Rp {profit.toLocaleString("id-ID")}</span>
         </div>
@@ -497,7 +497,7 @@ function OrderViewModal({ T, order, settings, onClose, onEdit }) {
         {/* Notes */}
         <ReadOnlyField T={T} label="Catatan">{order.notes || "—"}</ReadOnlyField>
 
-        <button onClick={onEdit} style={{ ...primaryBtnStyle(T), marginTop: 6 }}>
+        <button onClick={onEdit} style={{ ...primaryBtnStyle(T), marginTop: 6, width: "100%" }}>
           <Edit2 size={16} /> Edit order
         </button>
       </div>
@@ -507,10 +507,10 @@ function OrderViewModal({ T, order, settings, onClose, onEdit }) {
 
 function ReadOnlyField({ T, label, children, style }) {
   return (
-    <div style={style}>
-      <label style={{ fontSize: 11.5, color: T.inkFaint, display: "block", marginBottom: 4 }}>{label}</label>
-      <div style={{ border: `1px solid ${T.cardBorder}`, borderRadius: 6, padding: "9px 10px", background: T.bgElevated, color: T.ink, fontFamily: "'Work Sans', sans-serif", fontSize: 13.5, minHeight: 38, display: "flex", alignItems: "center" }}>
-        {children}
+    <div style={{ minWidth: 0, overflow: "hidden", ...style }}>
+      <label style={{ fontSize: 11.5, color: T.inkFaint, display: "block", marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</label>
+      <div style={{ border: `1px solid ${T.cardBorder}`, borderRadius: 6, padding: "9px 10px", background: T.bgElevated, color: T.ink, fontFamily: "'Work Sans', sans-serif", fontSize: 13.5, minHeight: 38, display: "flex", alignItems: "center", width: "100%", boxSizing: "border-box", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", width: "100%" }}>{children}</span>
       </div>
     </div>
   );
@@ -539,118 +539,107 @@ function OrderForm({ T, order, settings, onSave, onClose, onSettingsChange, edit
 
   return (
     <Modal T={T} title={order.customer || order.id ? "Edit order" : "New order"} onClose={onClose}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 18 }} onFocus={() => (editingRef.current = true)} onBlur={() => (editingRef.current = false)}>
-
-        <FormSection T={T} title="Customer">
-          <Field T={T} label="Tanggal order">
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", boxSizing: "border-box" }} onFocus={() => (editingRef.current = true)} onBlur={() => (editingRef.current = false)}>
+        
+        <div style={{ display: "flex", gap: 10, width: "100%", boxSizing: "border-box" }}>
+          <Field T={T} label="Tanggal order" style={{ flex: 1, minWidth: 0 }}>
             <input type="date" value={form.date} onChange={(e) => set({ date: e.target.value })} style={inputStyle(T)} />
           </Field>
-          <Field T={T} label="Nama customer">
+          <Field T={T} label="Nama customer" style={{ flex: 1, minWidth: 0 }}>
             <input value={form.customer} onChange={(e) => set({ customer: e.target.value })} style={inputStyle(T)} placeholder="Customer name" />
           </Field>
-          <div style={{ display: "flex", gap: 10 }}>
-            <Field T={T} label="Kode" style={{ flex: 1 }}>
-              <select value={form.platformId} onChange={(e) => set({ platformId: e.target.value })} style={inputStyle(T)}>
-                <option value="">— pilih —</option>
-                {settings.platforms.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-              </select>
-            </Field>
-            <Field T={T} label="Kontak" style={{ flex: 1.4 }}>
-              <input value={form.contact} onChange={(e) => set({ contact: e.target.value })} style={inputStyle(T)} placeholder="+62..." />
-            </Field>
-          </div>
-        </FormSection>
+        </div>
 
-        <FormSection T={T} title="Product">
-          <Field T={T} label="Aplikasi">
+        <div style={{ display: "flex", gap: 10, width: "100%", boxSizing: "border-box" }}>
+          <Field T={T} label="Kode (Platform)" style={{ flex: 1, minWidth: 0 }}>
+            <select value={form.platformId} onChange={(e) => set({ platformId: e.target.value })} style={inputStyle(T)}>
+              <option value="">— pilih —</option>
+              {settings.platforms.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+            </select>
+          </Field>
+          <Field T={T} label="Kontak customer" style={{ flex: 1, minWidth: 0 }}>
+            <input value={form.contact} onChange={(e) => set({ contact: e.target.value })} style={inputStyle(T)} placeholder="+62..." />
+          </Field>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, width: "100%", boxSizing: "border-box" }}>
+          <Field T={T} label="Aplikasi" style={{ flex: 1, minWidth: 0 }}>
             <select value={form.appId} onChange={(e) => set({ appId: e.target.value })} style={inputStyle(T)}>
               <option value="">— pilih —</option>
               {settings.apps.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
             </select>
           </Field>
-          <div style={{ display: "flex", gap: 10 }}>
-            <Field T={T} label="Plan" style={{ flex: 1 }}>
-              <select value={form.planId} onChange={(e) => set({ planId: e.target.value })} style={inputStyle(T)}>
-                <option value="">— pilih —</option>
-                {settings.plans.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-              </select>
-            </Field>
-            <Field T={T} label="Durasi" style={{ flex: 1 }}>
-              <select value={form.durationId} onChange={(e) => set({ durationId: e.target.value })} style={inputStyle(T)}>
-                <option value="">— pilih —</option>
-                {settings.durations.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
-              </select>
-            </Field>
-          </div>
-        </FormSection>
+          <Field T={T} label="Plan" style={{ flex: 1, minWidth: 0 }}>
+            <select value={form.planId} onChange={(e) => set({ planId: e.target.value })} style={inputStyle(T)}>
+              <option value="">— pilih —</option>
+              {settings.plans.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+            </select>
+          </Field>
+          <Field T={T} label="Durasi" style={{ flex: 1, minWidth: 0 }}>
+            <select value={form.durationId} onChange={(e) => set({ durationId: e.target.value })} style={inputStyle(T)}>
+              <option value="">— pilih —</option>
+              {settings.durations.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+            </select>
+          </Field>
+        </div>
 
-        <FormSection T={T} title="Account">
-          <Field T={T} label="Data akun">
+        <div style={{ display: "flex", gap: 10, width: "100%", boxSizing: "border-box" }}>
+          <Field T={T} label="Data akun" style={{ flex: 1, minWidth: 0 }}>
             <input value={form.account} onChange={(e) => set({ account: e.target.value })} style={inputStyle(T)} placeholder="email@..." />
           </Field>
-          <Field T={T} label="Password">
+          <Field T={T} label="Password" style={{ flex: 1, minWidth: 0 }}>
             <input value={form.password} onChange={(e) => set({ password: e.target.value })} style={inputStyle(T)} />
           </Field>
-        </FormSection>
+        </div>
 
-        <FormSection T={T} title="Supplier">
-          <Field T={T} label="First hand">
+        <div style={{ display: "flex", gap: 10, width: "100%", boxSizing: "border-box" }}>
+          <Field T={T} label="First hand (Supplier)" style={{ flex: 1, minWidth: 0 }}>
             <select value={form.supplierId} onChange={(e) => onSupplierChange(e.target.value)} style={inputStyle(T)}>
               <option value="">— pilih —</option>
               {settings.suppliers.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
           </Field>
           {selectedSupplier && selectedSupplier.contacts && selectedSupplier.contacts.length > 0 && (
-            <Field T={T} label="Admin / contact person">
+            <Field T={T} label="Admin / CP" style={{ flex: 1, minWidth: 0 }}>
               <select value={form.supplierContactId || ""} onChange={(e) => onSupplierContactChange(e.target.value)} style={inputStyle(T)}>
                 <option value="">— pilih —</option>
                 {selectedSupplier.contacts.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.contact}</option>)}
               </select>
             </Field>
           )}
-          <Field T={T} label="Contact FH">
+          <Field T={T} label="Contact FH" style={{ flex: 1, minWidth: 0 }}>
             <input value={form.supplierContact} onChange={(e) => set({ supplierContact: e.target.value })} style={inputStyle(T)} />
           </Field>
-        </FormSection>
+        </div>
 
-        <FormSection T={T} title="Pricing">
-          <div style={{ display: "flex", gap: 10 }}>
-            <Field T={T} label="Harga jual" style={{ flex: 1 }}>
-              <input type="number" value={form.sellPrice} onChange={(e) => set({ sellPrice: parseFloat(e.target.value) || 0 })} style={inputStyle(T)} />
-            </Field>
-            <Field T={T} label="Harga beli" style={{ flex: 1 }}>
-              <input type="number" value={form.costPrice} onChange={(e) => set({ costPrice: parseFloat(e.target.value) || 0 })} style={inputStyle(T)} />
-            </Field>
-          </div>
-          <div style={{ background: T.accentSoft, borderRadius: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 12.5, color: T.inkMuted }}>Keuntungan (auto)</span>
-            <span style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: profit >= 0 ? T.positive : T.negative }}>Rp {profit.toLocaleString("id-ID")}</span>
-          </div>
-        </FormSection>
+        <div style={{ display: "flex", gap: 10, width: "100%", boxSizing: "border-box" }}>
+          <Field T={T} label="Harga jual" style={{ flex: 1, minWidth: 0 }}>
+            <input type="number" value={form.sellPrice} onChange={(e) => set({ sellPrice: parseFloat(e.target.value) || 0 })} style={inputStyle(T)} />
+          </Field>
+          <Field T={T} label="Harga beli" style={{ flex: 1, minWidth: 0 }}>
+            <input type="number" value={form.costPrice} onChange={(e) => set({ costPrice: parseFloat(e.target.value) || 0 })} style={inputStyle(T)} />
+          </Field>
+        </div>
 
+        <div style={{ background: T.accentSoft, borderRadius: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", boxSizing: "border-box" }}>
+          <span style={{ fontSize: 12.5, color: T.inkMuted }}>Keuntungan (auto)</span>
+          <span style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: profit >= 0 ? T.positive : T.negative }}>Rp {profit.toLocaleString("id-ID")}</span>
+        </div>
+        
         <Field T={T} label="Catatan">
           <textarea value={form.notes} onChange={(e) => set({ notes: e.target.value })} rows={2} style={{ ...inputStyle(T), resize: "vertical" }} />
         </Field>
 
-        <button onClick={() => onSave(form)} style={primaryBtnStyle(T)}>Save order</button>
+        <button onClick={() => onSave(form)} style={{ ...primaryBtnStyle(T), marginTop: 6, width: "100%" }}>Save order</button>
       </div>
     </Modal>
   );
 }
 
-function FormSection({ T, title, children }) {
-  return (
-    <div>
-      <div style={{ fontSize: 11, fontWeight: 600, color: T.accent, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{children}</div>
-    </div>
-  );
-}
-
 function Field({ T, label, children, style }) {
   return (
-    <div style={style}>
-      <label style={{ fontSize: 11.5, color: T.inkFaint, display: "block", marginBottom: 4 }}>{label}</label>
+    <div style={{ minWidth: 0, overflow: "hidden", ...style }}>
+      <label style={{ fontSize: 11.5, color: T.inkFaint, display: "block", marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</label>
       {children}
     </div>
   );
@@ -658,8 +647,8 @@ function Field({ T, label, children, style }) {
 
 function Modal({ children, onClose, title, T }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: T.overlay, display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50 }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: T.bg, borderRadius: "16px 16px 0 0", padding: 22, width: "100%", maxWidth: 480, maxHeight: "88vh", overflowY: "auto" }}>
+    <div style={{ position: "fixed", inset: 0, background: T.overlay, display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, boxSizing: "border-box" }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: T.bg, borderRadius: "16px 16px 0 0", padding: 22, width: "100%", maxWidth: 480, maxHeight: "88vh", overflowY: "auto", overflowX: "hidden", boxSizing: "border-box" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 18, margin: 0, fontWeight: 600 }}>{title}</h3>
           <button onClick={onClose} style={iconBtnStyle(T)}><X size={16} /></button>
@@ -671,17 +660,17 @@ function Modal({ children, onClose, title, T }) {
 }
 
 function inputStyle(T) {
-  return { border: `1px solid ${T.cardBorder}`, borderRadius: 8, padding: "12px 12px", background: T.bgElevated, color: T.ink, outline: "none", fontFamily: "'Work Sans', sans-serif", width: "100%", fontSize: 16 };
+  return { border: `1px solid ${T.cardBorder}`, borderRadius: 6, padding: "9px 10px", background: T.bgElevated, color: T.ink, outline: "none", fontFamily: "'Work Sans', sans-serif", width: "100%", maxWidth: "100%", fontSize: 13.5, boxSizing: "border-box" };
 }
 function primaryBtnStyle(T) {
-  return { background: T.accent, color: T.isDark ? "#06101D" : "#F4F9FF", border: "none", borderRadius: 8, padding: "13px 16px", fontSize: 15, cursor: "pointer", fontFamily: "'Work Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 };
+  return { background: T.accent, color: T.isDark ? "#06101D" : "#F4F9FF", border: "none", borderRadius: 8, padding: "10px 16px", fontSize: 13.5, cursor: "pointer", fontFamily: "'Work Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxSizing: "border-box" };
 }
 function iconBtnStyle(T) {
-  return { display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", color: T.inkMuted, flexShrink: 0 };
+  return { display: "flex", alignItems: "center", justifyContent: "center", padding: 5, borderRadius: 5, border: "none", background: "transparent", cursor: "pointer", color: T.inkMuted, flexShrink: 0 };
 }
 function filterSelectStyle(T) {
-  return { border: `1px solid ${T.cardBorder}`, borderRadius: 999, padding: "8px 12px", background: T.card, color: T.ink, outline: "none", fontFamily: "'Work Sans', sans-serif", fontSize: 14, flex: "1 1 auto", minWidth: 110 };
+  return { border: `1px solid ${T.cardBorder}`, borderRadius: 999, padding: "6px 10px", background: T.card, color: T.ink, outline: "none", fontFamily: "'Work Sans', sans-serif", fontSize: 12, flex: "1 1 auto", minWidth: 100, boxSizing: "border-box" };
 }
 function iconOnlyBtn(T) {
-  return { display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, borderRadius: 10, border: `1px solid ${T.cardBorder}`, background: T.bgElevated, cursor: "pointer", color: T.inkMuted, flexShrink: 0 };
+  return { display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 10, border: `1px solid ${T.cardBorder}`, background: T.bgElevated, cursor: "pointer", color: T.inkMuted, flexShrink: 0, boxSizing: "border-box" };
 }
