@@ -88,9 +88,10 @@ export default function Dashboard({ T, data, onNavigate }) {
     });
   }, [orders, settings]);
 
-  return (
+return (
     <div style={{ padding: "0 20px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 999, padding: "10px 16px", marginBottom: 14 }}>
+      {/* 1. SEARCH BAR - Sharpened corners from 999 to 8 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 8, padding: "10px 16px", marginBottom: 14, boxShadow: "0 1px 3px rgba(0,0,0,0.02)" }}>
         <Search size={16} color={T.inkFaint} />
         <input
           value={searchInput}
@@ -101,39 +102,26 @@ export default function Dashboard({ T, data, onNavigate }) {
         />
       </div>
 
+      {/* 2. ACTIVE WARRANTY - Bold, uppercase, letter-spacing */}
       <button
         onClick={() => onNavigate({ type: "warranty" })}
         style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", background: "transparent", border: "none", cursor: "pointer", padding: "6px 2px 12px", fontFamily: "'Work Sans', sans-serif" }}
       >
-        <span style={{ fontSize: 13.5, fontWeight: 500, color: T.ink }}>Active Warranty</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: T.ink, textTransform: "uppercase", letterSpacing: 0.5 }}>Active Warranty</span>
         <ChevronRight size={16} color={T.inkFaint} />
       </button>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+      {/* 3. QUICK STATS (4 BOXES) */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
         <StatCard T={T} icon={<ShoppingCart size={18} />} label="Total orders" value={stats.totalOrders} color={T.accent} onClick={() => onNavigate(null)} />
         <StatCard T={T} icon={<ShieldCheck size={18} />} label="Active warranty" value={stats.activeWarranty} color={T.positive} onClick={() => onNavigate({ type: "warranty" })} />
         <StatCard T={T} icon={<Wallet size={18} />} label="Today's profit" value={formatIDR(stats.todaysProfit)} color={T.accent} onClick={() => onNavigate({ type: "today" })} />
         <StatCard T={T} icon={<TrendingUp size={18} />} label="Monthly profit" value={formatIDR(stats.monthlyProfit)} color={T.positive} onClick={() => onNavigate({ type: "month" })} />
       </div>
 
-      <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 14, padding: "16px 12px", marginBottom: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: T.inkMuted, padding: "0 8px 8px" }}>Profit — last 7 days</div>
-        <ResponsiveContainer width="100%" height={160}>
-          <BarChart data={last7DaysChart}>
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: T.inkFaint }} axisLine={false} tickLine={false} />
-            <YAxis hide />
-            <Tooltip
-              formatter={(v) => formatIDR(v)}
-              contentStyle={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 8, fontSize: 12 }}
-              labelStyle={{ color: T.ink }}
-            />
-            <Bar dataKey="profit" fill={T.accent} radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
+      {/* 4. ROUND DIAGRAM (MOVED UP) - Pie Chart */}
       {appDistribution.length > 0 && (
-        <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 14, padding: "16px 12px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 10, padding: "16px 12px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, boxShadow: "0 2px 5px rgba(0,0,0,0.03)" }}>
           <ResponsiveContainer width={110} height={110}>
             <PieChart>
               <Pie data={appDistribution} dataKey="value" nameKey="name" innerRadius={30} outerRadius={50} paddingAngle={2}>
@@ -142,11 +130,11 @@ export default function Dashboard({ T, data, onNavigate }) {
             </PieChart>
           </ResponsiveContainer>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: T.inkMuted, marginBottom: 2 }}>Orders by app</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMuted, marginBottom: 2, textTransform: "uppercase", letterSpacing: 0.5 }}>Orders by app</div>
             {appDistribution.map((d) => (
               <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: d.color, flexShrink: 0 }} />
-                <span style={{ color: T.ink }}>{d.name}</span>
+                <span style={{ width: 8, height: 8, borderRadius: "2px", background: d.color, flexShrink: 0 }} />
+                <span style={{ color: T.ink, fontWeight: 500 }}>{d.name}</span>
                 <span style={{ color: T.inkFaint, marginLeft: "auto" }}>{d.value}</span>
               </div>
             ))}
@@ -154,9 +142,27 @@ export default function Dashboard({ T, data, onNavigate }) {
         </div>
       )}
 
+      {/* 5. BAR CHART (MOVED DOWN) */}
+      <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 10, padding: "16px 12px", marginBottom: 16, boxShadow: "0 2px 5px rgba(0,0,0,0.03)" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMuted, padding: "0 8px 8px", textTransform: "uppercase", letterSpacing: 0.5 }}>Profit — last 7 days</div>
+        <ResponsiveContainer width="100%" height={160}>
+          <BarChart data={last7DaysChart}>
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: T.inkFaint }} axisLine={false} tickLine={false} />
+            <YAxis hide />
+            <Tooltip
+              formatter={(v) => formatIDR(v)}
+              contentStyle={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 6, fontSize: 12 }}
+              labelStyle={{ color: T.ink }}
+            />
+            <Bar dataKey="profit" fill={T.accent} radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* 6. REMINDERS */}
       {reminders.length > 0 && (
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 13.5, fontWeight: 600, color: T.negative, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.negative, display: "flex", alignItems: "center", gap: 6, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>
             <AlertTriangle size={14} /> Needs attention ({reminders.length})
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -164,13 +170,13 @@ export default function Dashboard({ T, data, onNavigate }) {
               <div
                 key={o.id}
                 onClick={() => onNavigate({ type: "search", query: o.customer })}
-                style={{ background: T.dangerSoft, border: `1px solid ${T.negative}33`, borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                style={{ background: T.dangerSoft, border: `1px solid ${T.negative}33`, borderRadius: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
               >
                 <div>
-                  <div style={{ fontSize: 13.5, fontWeight: 500, color: T.ink }}>{o.customer}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: T.ink }}>{o.customer}</div>
                   <div style={{ fontSize: 11.5, color: T.inkMuted }}>{settings.apps.find((a) => a.id === o.appId)?.label || "—"}</div>
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 500, color: T.negative, whiteSpace: "nowrap" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: T.negative, whiteSpace: "nowrap" }}>
                   {w.status === "expired" ? `Expired ${Math.abs(w.daysLeft)}d ago` : w.daysLeft === 0 ? "Expires today" : `${w.daysLeft}d left`}
                 </div>
               </div>
@@ -186,17 +192,18 @@ export default function Dashboard({ T, data, onNavigate }) {
   );
 }
 
+// Updated StatCard with sharper corners, depth, and boldened text
 function StatCard({ T, icon, label, value, color, onClick }) {
   return (
     <button
       onClick={onClick}
-      style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 14, padding: 14, cursor: onClick ? "pointer" : "default", textAlign: "left", fontFamily: "'Work Sans', sans-serif" }}
+      style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 10, padding: 14, cursor: onClick ? "pointer" : "default", textAlign: "left", fontFamily: "'Work Sans', sans-serif", boxShadow: "0 2px 5px rgba(0,0,0,0.03)" }}
     >
-      <div style={{ width: 32, height: 32, borderRadius: 8, background: T.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", color, marginBottom: 8 }}>
+      <div style={{ width: 32, height: 32, borderRadius: 6, background: T.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", color, marginBottom: 8 }}>
         {icon}
       </div>
-      <div style={{ fontSize: 11.5, color: T.inkMuted }}>{label}</div>
-      <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "'Fraunces', serif", color: T.ink, marginTop: 2 }}>{value}</div>
+      <div style={{ fontSize: 11.5, color: T.inkMuted, fontWeight: 500 }}>{label}</div>
+      <div style={{ fontSize: 17, fontWeight: 700, fontFamily: "'Fraunces', serif", color: T.ink, marginTop: 2 }}>{value}</div>
     </button>
   );
 }
