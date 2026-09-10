@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { doc, onSnapshot, setDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { Moon, Sun, Lock, Loader2, LayoutDashboard, ReceiptText, Settings as SettingsIcon, Check, Menu, X, LogOut, NotebookText } from "lucide-react";
 import Dashboard from "./Dashboard";
@@ -108,6 +108,50 @@ export default function App() {
   }, [dark, T.bg]);
 
   const flashToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2200); };
+
+  const backupAll = async () => {
+    try {
+      const snap = await getDoc(DATA_DOC_REF);
+      const backup = {
+        type: "nota-backup",
+        exportedAt: new Date().toISOString(),
+        data: snap.exists() ? snap.data() : null,
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `nota-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      flashToast("Backup downloaded");
+    } catch (e) {
+      flashToast("Backup failed — check your connection");
+    }
+  };
+
+  const restoreFromBackupFile = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const parsed = JSON.parse(evt.target.result);
+        if (parsed.type !== "nota-backup" || !parsed.data) {
+          flashToast("That doesn't look like a nota backup file");
+          return;
+        }
+        const confirmed = window.confirm(
+          `This will REPLACE all current orders and settings with the backup from ${parsed.exportedAt ? new Date(parsed.exportedAt).toLocaleString() : "an unknown date"}. This can't be undone. Continue?`
+        );
+        if (!confirmed) return;
+        await setDoc(DATA_DOC_REF, parsed.data);
+        flashToast("Restored from backup");
+      } catch (err) {
+        flashToast("Couldn't read that backup file");
+      }
+    };
+    reader.readAsText(file);
+  };
 
   // watch the shared admin password
   useEffect(() => {
@@ -229,7 +273,7 @@ export default function App() {
             clearInitialFilter={() => setOrdersFilterPreset(null)}
           />
         )}
-        {tab === "settings" && <SettingsPage T={T} data={data} persist={persist} authPassword={authPassword} flashToast={flashToast} editingRef={editingRef} />}
+        {tab === "settings" && <SettingsPage T={T} data={data} persist={persist} authPassword={authPassword} flashToast={flashToast} editingRef={editingRef} backupAll={backupAll} restoreFromBackupFile={restoreFromBackupFile} />}
       </div>
 
       {sidebarOpen && (

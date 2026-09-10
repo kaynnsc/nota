@@ -1,22 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
-import { Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight, DatabaseBackup, HardDriveUpload } from "lucide-react";
 import { uid } from "./App";
 
 const AUTH_DOC_REF = doc(db, "pricelist", "main");
 
 function inputStyle(T) {
-  return { border: `1px solid ${T.cardBorder}`, borderRadius: 8, padding: "10px 12px", background: T.bgElevated, color: T.ink, outline: "none", fontFamily: "'Work Sans', sans-serif", fontSize: 16 };
+  return { border: `1px solid ${T.cardBorder}`, borderRadius: 6, padding: "8px 10px", background: T.bgElevated, color: T.ink, outline: "none", fontFamily: "'Work Sans', sans-serif", fontSize: 13 };
 }
 function ghostBtnStyle(T) {
-  return { display: "flex", alignItems: "center", gap: 6, fontSize: 13, padding: "10px 12px", borderRadius: 8, border: `1px dashed ${T.cardBorder}`, background: "transparent", color: T.inkMuted, cursor: "pointer", fontFamily: "'Work Sans', sans-serif" };
+  return { display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, padding: "8px 12px", borderRadius: 8, border: `1px dashed ${T.cardBorder}`, background: "transparent", color: T.inkMuted, cursor: "pointer", fontFamily: "'Work Sans', sans-serif" };
 }
 function primaryBtnStyle(T) {
-  return { background: T.accent, color: T.isDark ? "#06101D" : "#F4F9FF", border: "none", borderRadius: 8, padding: "11px 16px", fontSize: 14.5, cursor: "pointer", fontFamily: "'Work Sans', sans-serif" };
+  return { background: T.accent, color: T.isDark ? "#06101D" : "#F4F9FF", border: "none", borderRadius: 8, padding: "9px 14px", fontSize: 13, cursor: "pointer", fontFamily: "'Work Sans', sans-serif" };
 }
 function iconBtnStyle(T) {
-  return { display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", color: T.inkMuted, flexShrink: 0 };
+  return { display: "flex", alignItems: "center", justifyContent: "center", padding: 5, borderRadius: 5, border: "none", background: "transparent", cursor: "pointer", color: T.inkMuted };
 }
 
 function OptionSection({ T, title, list, onChange, hasColor, hasDays, hasContact, editingRef }) {
@@ -36,44 +36,38 @@ function OptionSection({ T, title, list, onChange, hasColor, hasDays, hasContact
         <div style={{ padding: "0 14px 14px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
             {list.map((opt) => (
-              <div key={opt.id} style={{ border: `1px solid ${T.cardBorder}`, borderRadius: 10, padding: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  {hasColor && (
-                    <input type="color" value={opt.color || "#93AFC9"} onChange={(e) => update(opt.id, { color: e.target.value })} style={{ width: 34, height: 34, padding: 0, border: `1px solid ${T.cardBorder}`, borderRadius: 8, background: "none", flexShrink: 0 }} />
-                  )}
-                  <input
-                    defaultValue={opt.label}
-                    onFocus={() => (editingRef.current = true)}
-                    onBlur={(e) => { editingRef.current = false; update(opt.id, { label: e.target.value }); }}
-                    onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
-                    style={{ ...inputStyle(T), flex: 1, minWidth: 0 }}
-                  />
-                  <button onClick={() => remove(opt.id)} style={{ ...iconBtnStyle(T), color: T.negative, flexShrink: 0 }}><Trash2 size={14} /></button>
-                </div>
-                {(hasDays || hasContact) && (
-                  <div style={{ display: "flex", gap: 6, paddingLeft: hasColor ? 40 : 0 }}>
-                    {hasDays && (
-                      <input
-                        type="number"
-                        defaultValue={opt.days === null ? "" : opt.days}
-                        placeholder="Lifetime (leave blank)"
-                        onFocus={() => (editingRef.current = true)}
-                        onBlur={(e) => { editingRef.current = false; update(opt.id, { days: e.target.value === "" ? null : parseInt(e.target.value, 10) }); }}
-                        style={{ ...inputStyle(T), flex: 1 }}
-                        title="Days until expiry"
-                      />
-                    )}
-                    {hasContact && (
-                      <input
-                        defaultValue={opt.contact}
-                        placeholder="Contact"
-                        onFocus={() => (editingRef.current = true)}
-                        onBlur={(e) => { editingRef.current = false; update(opt.id, { contact: e.target.value }); }}
-                        style={{ ...inputStyle(T), flex: 1 }}
-                      />
-                    )}
-                  </div>
+              <div key={opt.id} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                {hasColor && (
+                  <input type="color" value={opt.color || "#93AFC9"} onChange={(e) => update(opt.id, { color: e.target.value })} style={{ width: 30, height: 30, padding: 0, border: `1px solid ${T.cardBorder}`, borderRadius: 6, background: "none", flexShrink: 0 }} />
                 )}
+                <input
+                  defaultValue={opt.label}
+                  onFocus={() => (editingRef.current = true)}
+                  onBlur={(e) => { editingRef.current = false; update(opt.id, { label: e.target.value }); }}
+                  onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
+                  style={{ ...inputStyle(T), flex: 1, minWidth: 0 }}
+                />
+                {hasDays && (
+                  <input
+                    type="number"
+                    defaultValue={opt.days === null ? "" : opt.days}
+                    placeholder="lifetime"
+                    onFocus={() => (editingRef.current = true)}
+                    onBlur={(e) => { editingRef.current = false; update(opt.id, { days: e.target.value === "" ? null : parseInt(e.target.value, 10) }); }}
+                    style={{ ...inputStyle(T), width: 72, flexShrink: 0 }}
+                    title="Days until expiry (leave blank for lifetime)"
+                  />
+                )}
+                {hasContact && (
+                  <input
+                    defaultValue={opt.contact}
+                    placeholder="Contact"
+                    onFocus={() => (editingRef.current = true)}
+                    onBlur={(e) => { editingRef.current = false; update(opt.id, { contact: e.target.value }); }}
+                    style={{ ...inputStyle(T), width: 110, flexShrink: 0 }}
+                  />
+                )}
+                <button onClick={() => remove(opt.id)} style={{ ...iconBtnStyle(T), color: T.negative, flexShrink: 0 }}><Trash2 size={13} /></button>
               </div>
             ))}
           </div>
@@ -163,9 +157,10 @@ function SupplierSection({ T, list, onChange, editingRef }) {
   );
 }
 
-export default function SettingsPage({ T, data, persist, authPassword, flashToast, editingRef }) {
+export default function SettingsPage({ T, data, persist, authPassword, flashToast, editingRef, backupAll, restoreFromBackupFile }) {
   const { settings } = data;
   const [newPw, setNewPw] = useState("");
+  const backupFileInputRef = useRef(null);
 
   const updateSettings = (patch) => persist({ ...data, settings: { ...settings, ...patch } });
 
@@ -202,6 +197,23 @@ export default function SettingsPage({ T, data, persist, authPassword, flashToas
           <input type="text" value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="New password" style={{ ...inputStyle(T), flex: 1 }} />
           <button onClick={changePassword} style={primaryBtnStyle(T)}>Save</button>
         </div>
+      </div>
+
+      <div style={{ marginTop: 24, borderTop: `1px solid ${T.cardBorder}`, paddingTop: 18 }}>
+        <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600, margin: "0 0 8px" }}>Backup & restore</h2>
+        <p style={{ fontSize: 12, color: T.inkMuted, marginBottom: 10 }}>
+          Downloads a JSON file with all your orders and dropdown settings. There's no automatic backup on the free plan, so it's worth doing this occasionally.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <button onClick={backupAll} style={ghostBtnStyle(T)}><DatabaseBackup size={14} /> Download backup</button>
+          <button onClick={() => backupFileInputRef.current && backupFileInputRef.current.click()} style={{ ...ghostBtnStyle(T), color: "#D64545", borderColor: "#D64545" }}>
+            <HardDriveUpload size={14} /> Restore from backup file
+          </button>
+          <input ref={backupFileInputRef} type="file" accept=".json" onChange={(e) => { restoreFromBackupFile(e.target.files[0]); e.target.value = ""; }} style={{ display: "none" }} />
+        </div>
+        <p style={{ fontSize: 11, color: T.inkFaint, marginTop: 8 }}>
+          Restoring completely replaces your current orders and settings and can't be undone.
+        </p>
       </div>
 
       <div style={{ height: 30 }} />
