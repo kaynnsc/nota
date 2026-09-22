@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
-import { Moon, Sun, Lock, Loader2, LayoutDashboard, ReceiptText, Settings as SettingsIcon, Check, Menu, X, LogOut, NotebookText } from "lucide-react";
+import { Moon, Sun, Lock, Loader2, LayoutDashboard, ReceiptText, Settings as SettingsIcon, Check, Menu, X, LogOut, NotebookText, DatabaseBackup } from "lucide-react";
 import Dashboard from "./Dashboard";
 import OrdersPage from "./Orders";
 import SettingsPage from "./Settings";
@@ -79,6 +79,22 @@ const FONT_LINK = `
 html, body, #root { margin: 0; padding: 0; width: 100%; }
 * { box-sizing: border-box; }
 body { overflow-x: hidden; }
+
+/* motion */
+button { transition: transform 0.12s ease, opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+button:active { transform: scale(0.96); }
+input, select, textarea { transition: border-color 0.15s ease, background-color 0.2s ease; }
+
+@keyframes nota-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes nota-slide-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes nota-slide-in-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes nota-scale-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+
+.nota-overlay { animation: nota-fade-in 0.18s ease; }
+.nota-sheet { animation: nota-slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+.nota-sidebar { animation: nota-slide-in-left 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+.nota-page { animation: nota-scale-in 0.18s ease; }
+.nota-row { animation: nota-fade-in 0.2s ease; }
 `;
 
 export default function App() {
@@ -261,24 +277,26 @@ export default function App() {
           </button>
         </div>
 
-        {tab === "dashboard" && <Dashboard T={T} data={data} onNavigate={goToOrders} />}
-        {tab === "orders" && (
-          <OrdersPage
-            T={T}
-            data={data}
-            persist={persist}
-            flashToast={flashToast}
-            editingRef={editingRef}
-            initialFilter={ordersFilterPreset}
-            clearInitialFilter={() => setOrdersFilterPreset(null)}
-          />
-        )}
-        {tab === "settings" && <SettingsPage T={T} data={data} persist={persist} authPassword={authPassword} flashToast={flashToast} editingRef={editingRef} backupAll={backupAll} restoreFromBackupFile={restoreFromBackupFile} />}
+        <div key={tab} className="nota-page">
+          {tab === "dashboard" && <Dashboard T={T} data={data} onNavigate={goToOrders} />}
+          {tab === "orders" && (
+            <OrdersPage
+              T={T}
+              data={data}
+              persist={persist}
+              flashToast={flashToast}
+              editingRef={editingRef}
+              initialFilter={ordersFilterPreset}
+              clearInitialFilter={() => setOrdersFilterPreset(null)}
+            />
+          )}
+          {tab === "settings" && <SettingsPage T={T} data={data} persist={persist} authPassword={authPassword} flashToast={flashToast} editingRef={editingRef} backupAll={backupAll} restoreFromBackupFile={restoreFromBackupFile} />}
+        </div>
       </div>
 
       {sidebarOpen && (
-        <div style={{ position: "fixed", inset: 0, background: T.overlay, zIndex: 40 }} onClick={() => setSidebarOpen(false)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 240, background: T.bgElevated, borderRight: `1px solid ${T.cardBorder}`, padding: "20px 16px", display: "flex", flexDirection: "column" }}>
+        <div className="nota-overlay" style={{ position: "fixed", inset: 0, background: T.overlay, zIndex: 40 }} onClick={() => setSidebarOpen(false)}>
+          <div className="nota-sidebar" onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 250, background: T.bgElevated, borderRight: `1px solid ${T.cardBorder}`, padding: "20px 16px", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24, padding: "0 4px" }}>
               <NotebookText size={20} color={T.accent} />
               <span style={{ fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600 }}>Nota</span>
@@ -286,6 +304,12 @@ export default function App() {
             <SidebarLink T={T} icon={<LayoutDashboard size={17} />} label="Dashboard" active={tab === "dashboard"} onClick={() => { setTab("dashboard"); setSidebarOpen(false); }} />
             <SidebarLink T={T} icon={<ReceiptText size={17} />} label="Orders" active={tab === "orders"} onClick={() => { setTab("orders"); setOrdersFilterPreset(null); setSidebarOpen(false); }} />
             <SidebarLink T={T} icon={<SettingsIcon size={17} />} label="Settings" active={tab === "settings"} onClick={() => { setTab("settings"); setSidebarOpen(false); }} />
+
+            <div style={{ borderTop: `1px solid ${T.cardBorder}`, margin: "10px 4px" }} />
+
+            <SidebarLink T={T} icon={dark ? <Sun size={17} /> : <Moon size={17} />} label={dark ? "Light mode" : "Dark mode"} onClick={() => setDark(!dark)} />
+            <SidebarLink T={T} icon={<DatabaseBackup size={17} />} label="Download backup" onClick={() => { backupAll(); setSidebarOpen(false); }} />
+
             <div style={{ flex: 1 }} />
             <SidebarLink T={T} icon={<LogOut size={17} />} label="Log out" onClick={() => { setIsLoggedIn(false); setSidebarOpen(false); }} danger />
           </div>
